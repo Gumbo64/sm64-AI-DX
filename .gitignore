@@ -1,3 +1,38 @@
+# mario 64 specific
+baserom.us.z64
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Default python .gitignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,0 +1,3 @@
+[submodule "sm64env/sm64coopdx"]
+	path = sm64env/sm64coopdx
+	url = https://github.com/coop-deluxe/sm64coopdx
