@@ -1,19 +1,27 @@
 from load_sm64_CDLL import SM64_GAME, clear_sm64_exes
-import tqdm
+from multiprocessing import Process
 import random
-import time
 
 clear_sm64_exes()
 
-game = SM64_GAME(server=True, server_port=7777)
-
-
-with tqdm.tqdm() as pbar:
-    while True:
+def play_game(id):
+    game = SM64_GAME(server = (id == id), server_port=7777)
+    for _ in range(3000):
         stickX = random.randint(-80, 80)
         stickY = random.randint(-80, 80)
         buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.9, 0.1], k=3)
         # buttonL = random.choices([0, 1], weights=[0.01, 0.99], k=1)[0]
         game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
         game.step_game()
-        pbar.update(1)
+
+if __name__ == '__main__':
+    num_processes = 20  # Specify the number of parallel processes you want to run
+    processes = []
+
+    for i in range(num_processes):
+        p = Process(target=play_game, args=(i,))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()

@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "rumble_init.h": "c",
+        "djui_panel_pause.h": "c",
+        "segment_symbols.h": "c",
+        "level_script.h": "c",
+        "gfx_output_buffer.h": "c",
+        "ios": "c",
+        "locale": "c",
+        "string": "c"
+    }
+}

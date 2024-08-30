@@ -1,1 +1,0 @@
-cd sm64coopdx && ./tools/apply_patch.sh ../patch.diff

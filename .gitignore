@@ -1,30 +1,6 @@
 # mario 64 specific
 baserom.us.z64
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+**/.tmp/*
 
 
 
@@ -32,6 +8,8 @@ baserom.us.z64
 
 
 # Default python .gitignore
+
+.python_venv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
