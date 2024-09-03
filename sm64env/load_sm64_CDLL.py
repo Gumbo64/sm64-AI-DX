@@ -3,6 +3,7 @@ import os
 import inspect
 import shutil
 from .sm64_structs import MarioState, NetworkPlayer
+import numpy as np
 
 curr_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sm64coopdx_path = os.path.join(curr_dir, "sm64coopdx")
@@ -41,7 +42,16 @@ class SM64_GAME:
         self.sm64_CDLL.get_network_player.argtypes = [ctypes.c_int]
         self.sm64_CDLL.get_network_player.restype = ctypes.POINTER(NetworkPlayer)
 
-        self.commands = [self.sm64_exe_path, "--savepath", curr_dir]
+        self.sm64_CDLL.raycast.argtypes = [ctypes.c_float * 3, ctypes.c_float * 3, ctypes.c_float * 3]
+        self.sm64_CDLL.raycast.restype = None
+
+        self.sm64_CDLL.raycasts.argtypes = [ctypes.POINTER(ctypes.c_float * 3), ctypes.POINTER(ctypes.c_float * 3), ctypes.POINTER(ctypes.c_float * 3), ctypes.c_int]
+        self.sm64_CDLL.raycasts.restype = None
+
+        self.sm64_CDLL.raycast_sphere.argtypes = [ctypes.POINTER(ctypes.c_float * 3), ctypes.c_int, ctypes.c_int, ctypes.c_int]
+        self.sm64_CDLL.raycast_sphere.restype = None
+
+        self.commands = [self.sm64_exe_path, "--hide-loading-screen", "--skip-update-check", "--savepath", curr_dir]
         if server:
             self.commands += ["--server", str(server_port)]
         else:
@@ -89,3 +99,26 @@ class SM64_GAME:
         network_player = self.sm64_CDLL.get_network_player(playerIndex)
         network_player = network_player.contents
         return network_player
+
+    def get_raycast(self, pos, dir):
+        ctypes_pos = (ctypes.c_float * 3)(*pos)
+        ctypes_dir = (ctypes.c_float * 3)(*dir)
+        ctypes_hitpos = (ctypes.c_float * 3)()
+        self.sm64_CDLL.raycast(ctypes_hitpos, ctypes_pos, ctypes_dir)
+        return np.array([ctypes_hitpos[0], ctypes_hitpos[1], ctypes_hitpos[2]])
+
+    def get_raycasts(self, pos_arr, dir_arr):
+        ctypes_pos_arr = (ctypes.c_float * 3 * len(pos_arr))()
+        ctypes_dir_arr = (ctypes.c_float * 3 * len(dir_arr))()
+        ctypes_hitpos_arr = (ctypes.c_float * 3 * len(pos_arr))()
+        
+        for i in range(len(pos_arr)):
+            ctypes_pos_arr[i][:] = pos_arr[i]
+            ctypes_dir_arr[i][:] = dir_arr[i]
+        self.sm64_CDLL.raycasts(ctypes_hitpos_arr, ctypes_pos_arr, ctypes_dir_arr, len(pos_arr))
+        return np.array([[ctypes_hitpos_arr[i][0], ctypes_hitpos_arr[i][1], ctypes_hitpos_arr[i][2]] for i in range(len(pos_arr))])
+    
+    def get_raycast_sphere(self, playerIndex, amount=3000, vecLength=10000):
+        ctypes_hitpos_arr = (ctypes.c_float * 3 * amount)()
+        self.sm64_CDLL.raycast_sphere(ctypes_hitpos_arr, amount, playerIndex, vecLength)
+        return np.array([[ctypes_hitpos_arr[i][0], ctypes_hitpos_arr[i][1], ctypes_hitpos_arr[i][2]] for i in range(amount)])

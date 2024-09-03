@@ -1,5 +1,5 @@
 fullscreen false
-window_x 482
+window_x 478
 window_y 792
 window_w 800
 window_h 600
@@ -7,7 +7,7 @@ vsync false
 msaa 0
 texture_filtering 2
 show_fps false
-uncapped_framerate false
+uncapped_framerate true
 frame_limit 480
 interpolation_mode 1
 coop_draw_distance 5
@@ -106,7 +106,6 @@ djui_theme_font 0
 djui_scale 0
 rules_version 0
 enable-mod: AI-MOD.lua
-enable-mod: hide-and-seek.lua
 save-name: 0 SM64
 save-name: 1 SM64
 save-name: 2 SM64

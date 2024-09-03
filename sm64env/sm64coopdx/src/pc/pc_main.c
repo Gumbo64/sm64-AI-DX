@@ -558,3 +558,62 @@ int global_index_to_local(int index) {
     }
     return -1;
 } 
+
+
+// REQUIRED to use find_surface_on_ray. Tragic.
+#include "engine/surface_collision.h"
+
+// f32* = Vec3f
+// find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hit_surface, Vec3f hit_pos, f32 precision)
+void raycast(Vec3f hitpos, Vec3f start, Vec3f dir) {
+    struct Surface *surf = NULL;
+    start[1] += 600.0f;
+    dir[1] /= 5.0f;
+    dir[1] = -abs(dir[1]);
+
+    // printf("start: %f %f %f\n", start[0], start[1], start[2]);
+    // printf("dir: %f %f %f\n", dir[0], dir[1], dir[2]);
+
+    find_surface_on_ray(start, dir, &surf, hitpos, 3.0f);
+
+    if (surf == NULL) {
+        hitpos[0] = -8000;
+        hitpos[1] = -8000;
+        hitpos[2] = -8000;
+    }
+
+}
+
+void raycasts(Vec3f *hitpos, Vec3f *starts, Vec3f *dirs, int count) {
+    for (int i = 0; i < count; i++) {
+        raycast(hitpos[i], starts[i], dirs[i]);
+    }
+}
+
+void sample_sphere_surface(Vec3f point, f32 new_len) {
+    f32 len = 10.0;
+    while (len > 1.0 || len == 0.0) {
+        point[0] = ((f32)rand()) / RAND_MAX * 2.0 - 1.0;
+        point[1] = ((f32)rand()) / RAND_MAX * 2.0 - 1.0;
+        point[2] = ((f32)rand()) / RAND_MAX * 2.0 - 1.0;
+        len = point[0] * point[0] + point[1] * point[1] + point[2] * point[2];
+    }
+    len = sqrtf(len);
+    f32 scale = new_len / len;
+    point[0] *= scale;
+    point[1] *= scale;
+    point[2] *= scale;
+}
+
+void raycast_sphere(Vec3f *hitpos_arr, int amount, int playerIndex, int vecLength) {
+    for (int i = 0; i < amount; i++) {
+        Vec3f dir = {0,0,0};
+        sample_sphere_surface(dir, vecLength);
+
+        Vec3f start = {0,0,0};
+        vec3f_copy(start, gMarioStates[playerIndex].pos);
+
+        raycast(hitpos_arr[i], start, dir);
+        // printf("hitpos: %f %f %f\n", hitpos_arr[i][0], hitpos_arr[i][1], hitpos_arr[i][2]);
+    }
+}

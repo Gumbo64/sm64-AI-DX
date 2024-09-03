@@ -1,7 +1,8 @@
 -- name: Collision Minimap
 -- description: Creates a collision based minimap on the top right corner of your screen. By Isaac
-gLevelValues.entryLevel = LEVEL_BITDW
+gLevelValues.entryLevel = LEVEL_BOB
 gServerSettings.skipIntro = 1
+gServerSettings.nametags = 0
 -- local references of most used functions are more performant
 local math_abs, math_sqrt, sins, coss, atan2s, djui_hud_set_rotation, djui_hud_render_rect, djui_hud_set_color, djui_hud_set_resolution, djui_hud_get_screen_width, collision_find_surface_on_ray, pairs =
       math.abs, math.sqrt, sins, coss, atan2s, djui_hud_set_rotation, djui_hud_render_rect, djui_hud_set_color, djui_hud_set_resolution, djui_hud_get_screen_width, collision_find_surface_on_ray, pairs

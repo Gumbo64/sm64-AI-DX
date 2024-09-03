@@ -1,8 +1,8 @@
 -- name: AI mod
 -- description: poop
-local compatibilityMode = true
+local tagCompatibilityMode = false
 
-if not compatibilityMode then
+if not tagCompatibilityMode then
     gLevelValues.entryLevel = LEVEL_BOB
     -- gLevelValues.entryLevel = LEVEL_BITDW
     gServerSettings.skipIntro = 1
@@ -86,11 +86,12 @@ end
 -- hook_event(HOOK_ON_HUD_RENDER, hud_hide)
 
 hook_event(HOOK_BEFORE_MARIO_UPDATE, update_mario)
+hook_event(HOOK_ON_LEVEL_INIT, on_init)
+hook_event(HOOK_ON_DIALOG, function () return false end)
+hook_event(HOOK_USE_ACT_SELECT, function () return false end)
+
 if not compatibilityMode then
-    hook_event(HOOK_ON_LEVEL_INIT, on_init)
     hook_event(HOOK_ON_DEATH, on_death)
-    hook_event(HOOK_ON_DIALOG, function () return false end)
-    hook_event(HOOK_USE_ACT_SELECT, function () return false end)
 end
 
 

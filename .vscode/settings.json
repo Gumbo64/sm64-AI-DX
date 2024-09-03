@@ -8,6 +8,11 @@
         "ios": "c",
         "locale": "c",
         "string": "c",
-        "djui_fps_display.h": "c"
+        "djui_fps_display.h": "c",
+        "strings.h": "c",
+        "string_view": "c",
+        "__locale": "c",
+        "__string": "c",
+        "surface_collision.h": "c"
     }
 }

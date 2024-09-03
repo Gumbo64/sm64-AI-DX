@@ -19,7 +19,7 @@ with tqdm.tqdm() as pbar:
             game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
             # game.set_controller(stickX=stickX, stickY=stickY)
             game.step_game()
-            # state = game.get_mario_state(0)
-            # pos = state.pos
-            # print([int(pos[i]) for i in range(3)])
+            # marioState = game.get_mario_state(0)
+            # networkPlayer = game.get_network_player(0)
+            # print(networkPlayer.currCourseNum)
         pbar.update(1)
