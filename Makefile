@@ -23,16 +23,16 @@ copy-rom:
 	cp $(ROM_FILE) $(SM64COOPDX)/$(ROM_FILE)
 	cp $(ROM_FILE) $(SM64ENV)/$(ROM_FILE)
 
-create-patch:
-	@echo "Creating patch..."
-	@cd $(SM64COOPDX) && yes | ./tools/create_patch.sh ../patch.diff
+# create-patch:
+# 	@echo "Creating patch..."
+# 	@cd $(SM64COOPDX) && yes | ./tools/create_patch.sh ../patch.diff
 
-apply-patch:
-	@echo "Applying patch..."
-	-@cd $(SM64COOPDX) && yes | ./tools/apply_patch.sh ../patch.diff
+# apply-patch:
+# 	@echo "Applying patch..."
+# 	-@cd $(SM64COOPDX) && yes | ./tools/apply_patch.sh ../patch.diff
 
 clean:
 	@echo "Cleaning up..."
 	$(MAKE) -C $(SM64COOPDX) clean
 
-.PHONY: all copy-rom clean apply-patch create-patch
+.PHONY: all copy-rom clean

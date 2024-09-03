@@ -5,7 +5,7 @@ import time
 
 clear_sm64_exes()
 
-NUM_GAMES = 2
+NUM_GAMES = 15
 ALL_SERVER = False
 
 games = [SM64_GAME(server = (i == 0 or ALL_SERVER), server_port=7777) for i in range(NUM_GAMES)]
@@ -13,12 +13,10 @@ games = [SM64_GAME(server = (i == 0 or ALL_SERVER), server_port=7777) for i in r
 with tqdm.tqdm() as pbar:
     while True:
         for i, game in enumerate(games):
-            # stickX = random.randint(-80, 80)
-            # stickY = random.randint(-80, 80)
-            stickX = 0
-            stickY = 0
+            stickX = random.randint(-80, 80)
+            stickY = random.randint(-80, 80)
             buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.99, 0.01], k=3)
-            # game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+            game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
             # game.set_controller(stickX=stickX, stickY=stickY)
             game.step_game()
             # state = game.get_mario_state(0)

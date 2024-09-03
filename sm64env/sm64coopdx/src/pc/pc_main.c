@@ -181,30 +181,30 @@ void produce_interpolation_frames_and_delay(void) {
     if (fabs(sFrameTargetTime - curTime) > 1) { sFrameTargetTime = curTime - 0.01f; }
 
     // interpolate and render
-    while ((curTime = clock_elapsed_f64()) < sFrameTargetTime) {
-        gfx_start_frame();
-        f32 delta = ((!configUncappedFramerate && configFrameLimit == FRAMERATE)
-            ? 1.0f
-            : MAX(MIN((curTime - sFrameTimeStart) / (sFrameTargetTime - sFrameTimeStart), 1.0f), 0.0f)
-        );
-        gRenderingDelta = delta;
-        if (!gSkipInterpolationTitleScreen) { patch_interpolations(delta); }
-        send_display_list(gGfxSPTask);
-        gfx_end_frame();
+    // while ((curTime = clock_elapsed_f64()) < sFrameTargetTime) {
+    gfx_start_frame();
+    f32 delta = ((!configUncappedFramerate && configFrameLimit == FRAMERATE)
+        ? 1.0f
+        : MAX(MIN((curTime - sFrameTimeStart) / (sFrameTargetTime - sFrameTimeStart), 1.0f), 0.0f)
+    );
+    gRenderingDelta = delta;
+    if (!gSkipInterpolationTitleScreen) { patch_interpolations(delta); }
+    send_display_list(gGfxSPTask);
+    gfx_end_frame();
 
-        // delay
-        if (!configUncappedFramerate) {
-            f64 targetDelta = 1.0 / (f64) configFrameLimit;
-            f64 now = clock_elapsed_f64();
-            f64 actualDelta = now - curTime;
-            if (actualDelta < targetDelta) {
-                f64 delay = ((targetDelta - actualDelta) * 1000.0);
-                if (delay > 0.0f) { WAPI.delay((u32) delay); }
-            }
+    // delay
+    if (!configUncappedFramerate) {
+        f64 targetDelta = 1.0 / (f64) configFrameLimit;
+        f64 now = clock_elapsed_f64();
+        f64 actualDelta = now - curTime;
+        if (actualDelta < targetDelta) {
+            f64 delay = ((targetDelta - actualDelta) * 1000.0);
+            if (delay > 0.0f) { WAPI.delay((u32) delay); }
         }
-
-        frames++;
     }
+
+    frames++;
+    // }
 
     static u64 sFramesSinceFpsUpdate = 0;
     static u64 sLastFpsUpdateTime = 0;
@@ -464,20 +464,97 @@ int main(int argc, char *argv[]) {
     mumble_init();
 
     // main loop
-    while (true) {
-        debug_context_reset();
-        CTX_BEGIN(CTX_FRAME);
-        WAPI.main_loop(produce_one_frame);
-#ifdef DISCORD_SDK
-        discord_update();
-#endif
-        mumble_update();
-#ifdef DEBUG
-        fflush(stdout);
-        fflush(stderr);
-#endif
-        CTX_END(CTX_FRAME);
-    }
+//     while (true) {
+//         debug_context_reset();
+//         CTX_BEGIN(CTX_FRAME);
+//         WAPI.main_loop(produce_one_frame);
+// #ifdef DISCORD_SDK
+//         discord_update();
+// #endif
+//         mumble_update();
+// #ifdef DEBUG
+//         fflush(stdout);
+//         fflush(stderr);
+// #endif
+//         CTX_END(CTX_FRAME);
+//     }
 
     return 0;
 }
+
+void step_game(void) {
+    debug_context_reset();
+    CTX_BEGIN(CTX_FRAME);
+    WAPI.main_loop(produce_one_frame);
+#ifdef DISCORD_SDK
+    discord_update();
+#endif
+    mumble_update();
+#ifdef DEBUG
+    fflush(stdout);
+    fflush(stderr);
+#endif
+    CTX_END(CTX_FRAME);
+}
+
+void set_controller(int playerIndex, int stickX, int stickY, 
+    int buttonA, int buttonB, int buttonX, int buttonY,
+    int buttonL, int buttonR, int buttonZ, int buttonStart,
+    int buttonDU, int buttonDL, int buttonDR, int buttonDD,
+    int buttonCU, int buttonCL, int buttonCR, int buttonCD
+) {
+    struct Controller *controller = &gControllers[playerIndex];
+
+    controller->rawStickX = stickX;
+    controller->rawStickY = stickY;
+
+    controller->controllerData->button = 0;
+    controller->controllerData->button |= buttonA ? A_BUTTON : 0;
+    controller->controllerData->button |= buttonB ? B_BUTTON : 0;
+    controller->controllerData->button |= buttonX ? X_BUTTON : 0;
+    controller->controllerData->button |= buttonY ? Y_BUTTON : 0;
+    controller->controllerData->button |= buttonL ? L_TRIG : 0;
+    controller->controllerData->button |= buttonR ? R_TRIG : 0;
+    controller->controllerData->button |= buttonZ ? Z_TRIG : 0;
+    controller->controllerData->button |= buttonStart ? START_BUTTON : 0;
+    controller->controllerData->button |= buttonDU ? U_JPAD : 0;
+    controller->controllerData->button |= buttonDL ? L_JPAD : 0;
+    controller->controllerData->button |= buttonDR ? R_JPAD : 0;
+    controller->controllerData->button |= buttonDD ? D_JPAD : 0;
+    controller->controllerData->button |= buttonCU ? U_CBUTTONS : 0;
+    controller->controllerData->button |= buttonCL ? L_CBUTTONS : 0;
+    controller->controllerData->button |= buttonCR ? R_CBUTTONS : 0;
+    controller->controllerData->button |= buttonCD ? D_CBUTTONS : 0;
+
+    if ( controller->rawStickX != 0 && controller->rawStickY != 0){
+        controller->controllerData->button |= INPUT_NONZERO_ANALOG;
+    }
+
+    controller->buttonPressed = controller->controllerData->button
+                    & (controller->controllerData->button ^ controller->buttonDown);
+
+    controller->buttonDown = controller->controllerData->button;
+
+    adjust_analog_stick(controller);
+}
+
+struct MarioState *get_mario_state(int index) {
+    return &gMarioStates[index];
+}
+
+struct NetworkPlayer *get_network_player(int index) {
+    return &gNetworkPlayers[index];
+ }
+
+int local_index_to_global(int index) {
+    return gNetworkPlayers[index].globalIndex;
+}
+
+int global_index_to_local(int index) {
+    for (int i = 0; i < MAX_PLAYERS; i++) {
+        if (gNetworkPlayers[i].globalIndex == index) {
+            return i;
+        }
+    }
+    return -1;
+} 

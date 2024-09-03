@@ -1,5 +1,5 @@
 fullscreen false
-window_x 473
+window_x 482
 window_y 792
 window_w 800
 window_h 600
@@ -91,7 +91,7 @@ skip_intro true
 pause_anywhere false
 coop_menu_staff_roll false
 coop_menu_level 0
-coop_menu_sound false
+coop_menu_sound 0
 coop_menu_random false
 disable_popups false
 language English

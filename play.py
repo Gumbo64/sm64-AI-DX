@@ -7,7 +7,6 @@ clear_sm64_exes()
 
 game = SM64_GAME(server=True, server_port=7777)
 
-
 # with tqdm.tqdm() as pbar:
 while True:
     stickX = random.randint(-80, 80)

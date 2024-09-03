@@ -39,7 +39,7 @@ TEXTURE_FIX ?= 0
 # Enable level texture enhancements by default (Castle Grounds and Castle Courtyard recolorable texture hills)
 ENHANCE_LEVEL_TEXTURES ?= 1
 # Enable Discord Game SDK (used for Discord invites)
-DISCORD_SDK ?= 1
+DISCORD_SDK ?= 0
 # Enable CoopNet SDK (used for CoopNet server hosting)
 COOPNET ?= 1
 # Enable docker build workarounds
@@ -96,6 +96,10 @@ WINDOWS_AUTO_BUILDER ?= 0
 EXTRA_CFLAGS ?=
 EXTRA_CPP_FLAGS ?=
 EXTRA_CFLAGS += -Wno-format-security -Wno-trigraphs
+
+ifndef UNSHARED_FILE
+  EXTRA_CFLAGS += -shared -lm -fPIC
+endif
 
 dev:; @$(MAKE) DEVELOPMENT=1
 
@@ -734,6 +738,11 @@ else
 endif
 
 
+ifndef UNSHARED_FILE
+  TARGET_CFLAGS += -shared -lm -fPIC
+endif
+
+
 INCLUDE_DIRS := include $(BUILD_DIR) $(BUILD_DIR)/include src .
 ifeq ($(TARGET_N64),1)
   INCLUDE_DIRS += include/libc
@@ -841,6 +850,12 @@ else # C compiler options for N64
   endif
 endif
 
+ifndef UNSHARED_FILE
+  CFLAGS += -shared -lm -fPIC
+endif
+
+
+
 ifeq ($(TARGET_N64),1)
   ASFLAGS     := -march=vr4300 -mabi=32 $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(foreach d,$(DEFINES),--defsym $(d))
   RSPASMFLAGS := $(foreach d,$(DEFINES),-definelabel $(subst =, ,$(d)))
@@ -911,6 +926,11 @@ endif
 
 # Zlib
 LDFLAGS += -lz
+
+ifndef UNSHARED_FILE
+  LDFLAGS += -shared -lm -fPIC
+endif
+
 
 # Update checker library
 ifeq ($(WINDOWS_BUILD),1)
