@@ -2,6 +2,7 @@ import ctypes
 import os
 import inspect
 import shutil
+from .sm64_structs import MarioState, NetworkPlayer
 
 curr_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 sm64coopdx_path = os.path.join(curr_dir, "sm64coopdx")
@@ -34,6 +35,12 @@ class SM64_GAME:
         ]
         self.sm64_CDLL.set_controller.restype = None
         
+        self.sm64_CDLL.get_mario_state.argtypes = [ctypes.c_int]
+        self.sm64_CDLL.get_mario_state.restype = ctypes.POINTER(MarioState)
+
+        self.sm64_CDLL.get_network_player.argtypes = [ctypes.c_int]
+        self.sm64_CDLL.get_network_player.restype = ctypes.POINTER(NetworkPlayer)
+
         self.commands = [self.sm64_exe_path, "--savepath", curr_dir]
         if server:
             self.commands += ["--server", str(server_port)]
@@ -55,8 +62,12 @@ class SM64_GAME:
         buttonDU = 0, buttonDL = 0, buttonDR = 0, buttonDD = 0,
         buttonCU = 0, buttonCL = 0, buttonCR = 0, buttonCD = 0
     ):
+        stickX = int(stickX)
+        stickY = int(stickY)
         assert -80 <= stickX <= 80
         assert -80 <= stickY <= 80
+
+
         buttons = [buttonA, buttonB, buttonX, buttonY, buttonL, buttonR, buttonZ, buttonStart,
                    buttonDU, buttonDL, buttonDR, buttonDD, buttonCU, buttonCL, buttonCR, buttonCD]
         assert all(0 <= button <= 1 for button in buttons)
@@ -68,3 +79,13 @@ class SM64_GAME:
             buttonDU, buttonDL, buttonDR, buttonDD,
             buttonCU, buttonCL, buttonCR, buttonCD            
         )
+
+    def get_mario_state(self, playerIndex):
+        player_mario_state = self.sm64_CDLL.get_mario_state(playerIndex)
+        player_mario_state = player_mario_state.contents
+        return player_mario_state
+    
+    def get_network_player(self, playerIndex):
+        network_player = self.sm64_CDLL.get_network_player(playerIndex)
+        network_player = network_player.contents
+        return network_player

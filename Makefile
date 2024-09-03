@@ -19,6 +19,8 @@ copy-rom:
 		echo -e "\033[0;31mA Mario 64 ROM is required with the name $(ROM_FILE)\033[0m"; \
 		exit 1; \
 	fi
+# Need it in SM64ENV when the game runs, and also need it in SM64COOPDX to build
+	cp $(ROM_FILE) $(SM64COOPDX)/$(ROM_FILE)
 	cp $(ROM_FILE) $(SM64ENV)/$(ROM_FILE)
 
 create-patch:
