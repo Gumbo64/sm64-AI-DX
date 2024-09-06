@@ -93,13 +93,16 @@ class MarioState(ctypes.Structure):
     _fields_ = [
         ("playerIndex", ctypes.c_ushort),
         ("input", ctypes.c_ushort),
+
         ("flags", ctypes.c_uint),
         ("particleFlags", ctypes.c_uint),
         ("action", ctypes.c_uint),
         ("prevAction", ctypes.c_uint),
         ("terrainSoundAddend", ctypes.c_uint),
+
         ("actionState", ctypes.c_ushort),
         ("actionTimer", ctypes.c_ushort),
+        
         ("actionArg", ctypes.c_uint),
         ("intendedMag", ctypes.c_float),
         ("intendedYaw", ctypes.c_short),
@@ -223,38 +226,51 @@ class MarioState(ctypes.Structure):
 class NetworkPlayer(ctypes.Structure):
     _fields_ = [
         ("connected", ctypes.c_bool),
+
         ("type", ctypes.c_ubyte),
         ("localIndex", ctypes.c_ubyte),
         ("globalIndex", ctypes.c_ubyte),
+
         ("moderator", ctypes.c_bool),
+
         ("lastReceived", ctypes.c_float),
         ("lastSent", ctypes.c_float),
         ("lastPingSent", ctypes.c_float),
+
         ("currLevelAreaSeqId", ctypes.c_ushort),
         ("currCourseNum", ctypes.c_short),
         ("currActNum", ctypes.c_short),
         ("currLevelNum", ctypes.c_short),
         ("currAreaIndex", ctypes.c_short),
+
         ("currLevelSyncValid", ctypes.c_bool),
         ("currAreaSyncValid", ctypes.c_bool),
         ("currPositionValid", ctypes.c_bool),
+
         ("fadeOpacity", ctypes.c_ubyte),
         ("onRxSeqId", ctypes.c_ubyte),
         ("modelIndex", ctypes.c_ubyte),
         ("gag", ctypes.c_ubyte),
+
         ("ping", ctypes.c_uint),
-        ("palette", ctypes.c_void_p),
-        ("name", ctypes.c_char * 128),
-        ("description", ctypes.c_char * 256),
+
+        ("palette", ctypes.c_ubyte * 3 * 8), # struct PlayerPalette
+
+        ("name", ctypes.c_char * 64),
+        ("description", ctypes.c_char * 20),
+
         ("descriptionR", ctypes.c_ubyte),
         ("descriptionG", ctypes.c_ubyte),
         ("descriptionB", ctypes.c_ubyte),
         ("descriptionA", ctypes.c_ubyte),
         ("overrideModelIndex", ctypes.c_ubyte),
-        ("overridePalette", ctypes.c_void_p),
-        ("rxSeqIds", ctypes.c_ushort * 16),
-        ("rxPacketHash", ctypes.c_uint * 16),
+
+        ("overridePalette", ctypes.c_ubyte * 3 * 8), # struct PlayerPalette
+        ("rxSeqIds", ctypes.c_ushort * 256),
+        ("rxPacketHash", ctypes.c_uint * 256),
+
         ("discordId", ctypes.c_char * 64),
+
         ("paletteIndex", ctypes.c_ubyte),
         ("overridePaletteIndex", ctypes.c_ubyte),
         ("overridePaletteIndexLp", ctypes.c_ubyte),

@@ -7,7 +7,7 @@ import math
 
 clear_sm64_exes()
 TREE_FACTOR = 2
-NUM_GAMES = 4
+NUM_GAMES = 15
 ALL_SERVER = True
 
 games = [SM64_GAME(server = (i == 0), server_port=7777) for i in range(NUM_GAMES)]
@@ -16,26 +16,27 @@ games = [SM64_GAME(server = (i == 0), server_port=7777) for i in range(NUM_GAMES
 with tqdm.tqdm() as pbar:
     while True:
         for i, game in enumerate(games):
-
             if i == 0:
                 # pretend that index 0 is at the bottom of the tree
                 if (len(games) == 1):
                     goalIndex = 1
                 else:
-                    goalIndex = int(len(games)/TREE_FACTOR)
+                    goalIndex = len(games) // TREE_FACTOR
             elif i == 1:
                 # Top of the tree, points to the player
                 goalIndex = len(games)
 
             else:
-                goalIndex = int(i/TREE_FACTOR)
+                goalIndex = i // TREE_FACTOR
 
             # Using the server's global index system
-            goalIndex = len(games)
+            # goalIndex = len(games)
 
             pos = games[i].get_mario_state(0).pos
             if goalIndex == len(games):
-                goalPos = games[0].get_mario_state(len(games)).pos
+                # goalPos = games[0].get_mario_state(len(games)).pos
+                # print(np.array(goalPos))
+                goalPos = np.array([5524.7285, 3072, 1187.4833])
             else:
                 goalPos = games[goalIndex].get_mario_state(0).pos
             
@@ -52,4 +53,4 @@ with tqdm.tqdm() as pbar:
 
             game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA)
             game.step_game()         
-        pbar.update(1)
+        # pbar.update(1)

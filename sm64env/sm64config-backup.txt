@@ -1,8 +1,8 @@
 fullscreen false
-window_x 478
-window_y 792
-window_w 800
-window_h 600
+window_x 1101
+window_y 424
+window_w 1063
+window_h 831
 vsync false
 msaa 0
 texture_filtering 2
@@ -56,9 +56,9 @@ bettercam_invertx true
 bettercam_inverty false
 bettercam_xsens 50
 bettercam_ysens 50
-bettercam_aggression 0
-bettercam_pan_level 0
-bettercam_degrade 50
+bettercam_aggression 100
+bettercam_pan_level 100
+bettercam_degrade 100
 debug_offset 0
 debug_tags 0
 lua_profiler false
@@ -99,12 +99,12 @@ dynos_local_player_model_only false
 coopnet_ip net.coop64.us
 coopnet_port 34197
 coopnet_password 
-coopnet_dest 0
+coopnet_dest 3892523159326069290
 djui_theme 1
 djui_theme_center true
 djui_theme_font 0
 djui_scale 0
-rules_version 0
+rules_version 1
 save-name: 0 SM64
 save-name: 1 SM64
 save-name: 2 SM64

@@ -13,6 +13,11 @@
         "string_view": "c",
         "__locale": "c",
         "__string": "c",
-        "surface_collision.h": "c"
+        "surface_collision.h": "c",
+        "djui_hud_utils.h": "c",
+        "gfx_dimensions.h": "c",
+        "gfx_window_manager_api.h": "c",
+        "controller_mouse.h": "c",
+        "camera.h": "c"
     }
 }

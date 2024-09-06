@@ -560,38 +560,15 @@ int global_index_to_local(int index) {
 } 
 
 
-// REQUIRED to use find_surface_on_ray. Tragic.
-#include "engine/surface_collision.h"
+
+// RAYCASTS //
 
 // f32* = Vec3f
-// find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hit_surface, Vec3f hit_pos, f32 precision)
-void raycast(Vec3f hitpos, Vec3f start, Vec3f dir) {
-    struct Surface *surf = NULL;
-    start[1] += 600.0f;
-    dir[1] /= 5.0f;
-    dir[1] = -abs(dir[1]);
-
-    // printf("start: %f %f %f\n", start[0], start[1], start[2]);
-    // printf("dir: %f %f %f\n", dir[0], dir[1], dir[2]);
-
-    find_surface_on_ray(start, dir, &surf, hitpos, 3.0f);
-
-    if (surf == NULL) {
-        hitpos[0] = -8000;
-        hitpos[1] = -8000;
-        hitpos[2] = -8000;
-    }
-
-}
-
-void raycasts(Vec3f *hitpos, Vec3f *starts, Vec3f *dirs, int count) {
-    for (int i = 0; i < count; i++) {
-        raycast(hitpos[i], starts[i], dirs[i]);
-    }
-}
+#include "engine/surface_collision.h" // for find_surface_on_ray to work
+#include "game/camera.h" // for gCamera
 
 void sample_sphere_surface(Vec3f point, f32 new_len) {
-    f32 len = 10.0;
+    f32 len = 2.0;
     while (len > 1.0 || len == 0.0) {
         point[0] = ((f32)rand()) / RAND_MAX * 2.0 - 1.0;
         point[1] = ((f32)rand()) / RAND_MAX * 2.0 - 1.0;
@@ -605,15 +582,43 @@ void sample_sphere_surface(Vec3f point, f32 new_len) {
     point[2] *= scale;
 }
 
-void raycast_sphere(Vec3f *hitpos_arr, int amount, int playerIndex, int vecLength) {
+void raycast_with_normal(Vec3f hitpos, Vec3f normal, Vec3f start, Vec3f dir) {
+    struct Surface *surf = NULL;
+    find_surface_on_ray(start, dir, &surf, hitpos, 3.0f);
+    if (surf == NULL) {
+        normal[0] = 0;
+        normal[1] = 0;
+        normal[2] = 0;
+    } else {
+        normal[0] = surf->normal.x;
+        normal[1] = surf->normal.y;
+        normal[2] = surf->normal.z;
+    }
+}
+
+void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount, 
+                                f32 maxRayLength, f32 cameraDirBiasFactor) {
+
+    Vec3f start;
+    vec3f_copy(start, gCamera->pos);
+    
+    Vec3f velBias;
+    vec3f_copy(velBias, gCamera->focus);
+    vec3f_sub(velBias, gCamera->pos);
+    vec3f_normalize(velBias);
+    velBias[0] *= cameraDirBiasFactor;
+    velBias[1] *= cameraDirBiasFactor;
+    velBias[2] *= cameraDirBiasFactor;
+
     for (int i = 0; i < amount; i++) {
-        Vec3f dir = {0,0,0};
-        sample_sphere_surface(dir, vecLength);
+        Vec3f dir;
+        sample_sphere_surface(dir, 1);
 
-        Vec3f start = {0,0,0};
-        vec3f_copy(start, gMarioStates[playerIndex].pos);
-
-        raycast(hitpos_arr[i], start, dir);
-        // printf("hitpos: %f %f %f\n", hitpos_arr[i][0], hitpos_arr[i][1], hitpos_arr[i][2]);
+        vec3f_add(dir, velBias);
+        dir[0] *= maxRayLength;
+        dir[1] *= maxRayLength;
+        dir[2] *= maxRayLength;
+        
+        raycast_with_normal(hitpos_arr[i], normal_arr[i], start, dir);
     }
 }
