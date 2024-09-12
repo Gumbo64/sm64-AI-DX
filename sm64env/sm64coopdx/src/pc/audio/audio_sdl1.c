@@ -126,7 +126,7 @@ static void audio_drain(void *user, Uint8 *buf, int len) {
 
 static bool audio_sdl_init(void) {
     if (SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
-        fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
+        // fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
         return false;
     }
 

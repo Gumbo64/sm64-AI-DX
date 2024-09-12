@@ -482,19 +482,21 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void step_game(void) {
-    debug_context_reset();
-    CTX_BEGIN(CTX_FRAME);
-    WAPI.main_loop(produce_one_frame);
-#ifdef DISCORD_SDK
-    discord_update();
-#endif
-    mumble_update();
-#ifdef DEBUG
-    fflush(stdout);
-    fflush(stderr);
-#endif
-    CTX_END(CTX_FRAME);
+void step_game(int steps) {
+    for (int i = 0; i < steps; i++) {
+        debug_context_reset();
+        CTX_BEGIN(CTX_FRAME);
+        WAPI.main_loop(produce_one_frame);
+    #ifdef DISCORD_SDK
+        discord_update();
+    #endif
+        mumble_update();
+    #ifdef DEBUG
+        fflush(stdout);
+        fflush(stderr);
+    #endif
+        CTX_END(CTX_FRAME);
+    }
 }
 
 void set_controller(int playerIndex, int stickX, int stickY, 

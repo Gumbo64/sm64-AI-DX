@@ -1,16 +1,18 @@
 import numpy as np
 
 class CURIOSITY:
-    def __init__(self):
-        self.index = 0
-        self.chunk_xz_size = 100
-        self.chunk_y_size = 20
+    def __init__(self, max_visits=1000):
+        self.max_visits = max_visits
+        self.chunk_xz_size = 40
+        self.chunk_y_size = 200
         self.bounding_size = 8192
-        self.radius = 300
+        self.radius = 200
 
         self.F_shape = np.array([2*self.bounding_size // self.chunk_xz_size, 2*self.bounding_size // self.chunk_y_size, 2*self.bounding_size // self.chunk_xz_size])
  
         self.sphere_mask = self.create_mask()
+        self.F = np.zeros(shape=self.F_shape, dtype=int)
+    def reset(self):
         self.F = np.zeros(shape=self.F_shape, dtype=int)
 
     def create_ellipsoid_tensor(self,shape_sphere):
@@ -19,11 +21,16 @@ class CURIOSITY:
         y = np.linspace(-1, 1, b)
         z = np.linspace(-1, 1, c)
         xv, yv, zv = np.meshgrid(x, y, z, indexing='ij')
-        ellipsoid = (xv)**2 + (yv )**2 + (zv )**2 <= 1
+        # print("---------")
+        # print(xv)
+        # print(yv)
+        # print(zv)
+        ellipsoid = (xv)**2 + (yv)**2 + (zv)**2 <= 1
+        
         return ellipsoid
 
     def create_mask(self,):
-        shape_sphere = np.array([2 * self.radius // self.chunk_xz_size, 2*self.radius // self.chunk_y_size, 2*self.radius // self.chunk_xz_size])
+        shape_sphere = np.array([(2 * self.radius) // self.chunk_xz_size + 1, (2 * self.radius) // self.chunk_y_size + 1, (2 * self.radius) // self.chunk_xz_size + 1])
         # print(shape_rad)
         tensor = self.create_ellipsoid_tensor(shape_sphere)
         indices = np.argwhere(tensor)
@@ -37,8 +44,11 @@ class CURIOSITY:
         # don't go over or under the bounds
         indices = indices[((indices) >= 0).all(axis=1) & ((indices) < np.array(self.F_shape)).all(axis=1)]
         self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
+        self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.clip(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], 0, self.max_visits)
 
     def add_circles(self,centres):
+        if len(centres) == 0:
+            return
         for centre in centres:
             self.add_circle(centre)
 

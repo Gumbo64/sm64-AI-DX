@@ -475,7 +475,7 @@ static void DynOS_Tex_GeneratePack_Recursive(const SysPath &aPackFolder, SysPath
 }
 
 void DynOS_Tex_GeneratePack(const SysPath &aPackFolder, SysPath &aOutputFolder, bool aAllowCustomTextures) {
-    Print("Processing textures: \"%s\"", aPackFolder.c_str());
+    // Print("Processing textures: \"%s\"", aPackFolder.c_str());
 
     GfxData *_GfxData = New<GfxData>();
     _GfxData->mModelIdentifier = 0;

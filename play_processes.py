@@ -1,27 +1,40 @@
-from sm64env.load_sm64_CDLL import SM64_GAME, clear_sm64_exes
-from multiprocessing import Process
+import gym.vector
+import gym.vector
+from sm64env.sm64env_example import SM64_ENV
+from visualiser import visualise_game_tokens, visualise_curiosity
 import random
+import gym
+import time
+n_envs = 16
 
-clear_sm64_exes()
+def make_env(i):
+    def mkenv():
+        return SM64_ENV(server=(i % 16 == 0), server_port=(7777 + (i // 16)))
+    return mkenv
 
-def play_game(id):
-    game = SM64_GAME(server = (id == 0), server_port=7777)
-    for _ in range(30000):
-        stickX = random.randint(-80, 80)
-        stickY = random.randint(-80, 80)
-        buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.9, 0.1], k=3)
-        # buttonL = random.choices([0, 1], weights=[0.01, 0.99], k=1)[0]
-        game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        game.step_game()
+envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_memory=False)
+# envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
 
-if __name__ == '__main__':
-    num_processes = 3  # Specify the number of parallel processes you want to run
-    processes = []
 
-    for i in range(num_processes):
-        p = Process(target=play_game, args=(i,))
-        p.start()
-        processes.append(p)
+obs, info = envs.reset()
 
-    for p in processes:
-        p.join()
+while True:
+    start_time = time.time()
+    stickX = random.randint(-80, 80)
+    stickY = random.randint(-80, 80)
+    # buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.99, 0.01], k=3)
+    buttonA, buttonB = random.choices([0, 1], weights=[0.99, 0.01], k=2)
+    action = [(stickX, stickY), (buttonA, buttonB, 0)]
+    # action = envs.action_space.sample()
+    # 
+    # obs, reward, done, info = env.step(action)
+    # visualise_game_tokens(obs)
+    # visualise_curiosity(env.curiosity)
+    
+    actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])
+
+    # print(actions)
+    envs.step(actions)
+    print(time.time() - start_time)
+
+

@@ -1,8 +1,11 @@
 # mario 64 specific
 baserom.us.z64
 **/.tmp/*
-
-
+*.pth
+*.pickle
+wandb/
+runs/
+.vscode/
 
 
 

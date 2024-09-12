@@ -104,7 +104,7 @@ static void controller_sdl_init(void) {
     sBackgroundGamepad = configBackgroundGamepad;
 
     if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0) {
-        fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
+        // fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
         return;
     }
 

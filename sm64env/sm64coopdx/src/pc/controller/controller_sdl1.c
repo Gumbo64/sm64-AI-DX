@@ -108,7 +108,7 @@ static void controller_sdl_bind(void) {
 
 static void controller_sdl_init(void) {
     if (SDL_Init(SDL_INIT_JOYSTICK) != 0) {
-        fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
+        // fprintf(stderr, "SDL init error: %s\n", SDL_GetError());
         return;
     }
 

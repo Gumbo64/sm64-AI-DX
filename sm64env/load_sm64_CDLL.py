@@ -9,7 +9,7 @@ curr_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe(
 sm64coopdx_path = os.path.join(curr_dir, "sm64coopdx")
 build_dir = os.path.join(sm64coopdx_path, "build", "us_pc")
 
-os.chdir(sm64coopdx_path)
+# os.chdir(sm64coopdx_path)
 
 Vec3f = ctypes.c_float * 3
 
@@ -30,7 +30,7 @@ class SM64_GAME:
         self.sm64_CDLL.main.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)]
         self.sm64_CDLL.main.restype = None
 
-        self.sm64_CDLL.step_game.argtypes = []
+        self.sm64_CDLL.step_game.argtypes = [ctypes.c_int]
         self.sm64_CDLL.step_game.restype = None
         
         self.sm64_CDLL.set_controller.argtypes = [
@@ -62,8 +62,25 @@ class SM64_GAME:
         self.ctypes_commands[:] = [commands.encode('utf-8') for commands in self.commands]
         self.sm64_CDLL.main(len(self.commands), self.ctypes_commands)
 
-    def step_game(self):
-        return self.sm64_CDLL.step_game()
+    def __del__(self):
+        # Unload the shared library, deinitialise the game, delete the temporary executable
+        # dlclose_func = ctypes.cdll.LoadLibrary('').dlclose
+        # dlclose_func.argtypes = [ctypes.c_void_p]
+        # handle = self.sm64_CDLL._handle
+
+        self.sm64_CDLL.game_deinit()
+        del self.sm64_CDLL
+        # dlclose_func(handle)
+        
+        # Sadly this doesn't always work with async etc
+        try:
+            os.remove(self.sm64_exe_path)
+        except OSError as e:
+            # print(f"Error removing {self.sm64_exe_path}")
+            pass
+
+    def step_game(self, num_steps=1):
+        return self.sm64_CDLL.step_game(num_steps)
 
     def set_controller(self,
         playerIndex = 0, stickX = 0, stickY = 0,
