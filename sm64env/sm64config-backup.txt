@@ -1,5 +1,5 @@
 fullscreen false
-window_x 1398
+window_x 271
 window_y 561
 window_w 1063
 window_h 831
@@ -82,7 +82,7 @@ coop_host_save_slot 1
 coop_join_ip localhost
 coop_join_port 7777
 coop_network_system 0
-coop_player_interaction 0
+coop_player_interaction 1
 coop_player_knockback_strength 25
 coop_stay_in_level_after_star 1
 coop_nametags true

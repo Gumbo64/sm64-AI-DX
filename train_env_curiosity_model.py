@@ -18,6 +18,7 @@ import wandb
 from torch.utils.tensorboard import SummaryWriter
 import tqdm
 import os
+import math
 # os.environ["WANDB_SILENT"] = "true"
 
 clear_sm64_exes()
@@ -25,7 +26,7 @@ clear_sm64_exes()
 n_envs = 16
 steps_per_iter = 400
 ppo_epochs = 4
-mini_batch_size = 1024
+mini_batch_size = 1600 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
 
@@ -40,8 +41,6 @@ class Agent(nn.Module):
         self.num_inputs = 10
         self.token_size = 64
         self.num_outputs = 5
-        # actor_std = 0.05
-        actor_std = 0.01
 
         self.preprocess = nn.Sequential(
             layer_init(nn.Linear(self.num_inputs, self.token_size)),
@@ -59,14 +58,15 @@ class Agent(nn.Module):
         self.actor_mean = nn.Sequential(
             layer_init(nn.Linear(self.token_size, 512)),
             nn.Tanh(),
-            layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
+            # layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
+            layer_init(nn.Linear(512, self.num_outputs)),
+            nn.Tanh(),
         )
-        self.actor_log_std = nn.Parameter(torch.ones(1, self.num_outputs) * actor_std)
+        self.actor_log_std = nn.Parameter(torch.ones(1, self.num_outputs) * (math.log(0.5)))
 
     def forward(self, array_of_obs):
         # Transformer part
         tensor_array_of_obs = nn.utils.rnn.pad_sequence(array_of_obs, batch_first=True, padding_value=0).to(device)
-        tensor_array_of_obs = torch.tensor(tensor_array_of_obs, dtype=torch.float32).to(device)
 
         x = self.preprocess(tensor_array_of_obs)
         x = self.transformer(x)
@@ -147,13 +147,16 @@ def clamp_stick(tensor_vec):
     return norm_vec * clamped_length
 
 
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 agent = Agent().to(device)
 # agent.load_state_dict(torch.load("ppo_1725915244.6275122_300.pth"))
-agent.load_state_dict(torch.load("ppo_1726073541.7477632_410.pth"))
+# agent.load_state_dict(torch.load("ppo_1726073541.7477632_410.pth"))
+# agent.load_state_dict(torch.load("ppo_1726131441.7890348_220.pth"))
+# agent.load_state_dict(torch.load("booster_agent.pth"))
+# agent.load_state_dict(torch.load("ppo_1726131441.7890348_220.pth"))
 
-
-optimizer = optim.Adam(agent.parameters(), lr=3e-4)
+optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
 run_name = f"ppo_{time.time()}"
 wandb.init(
@@ -172,7 +175,6 @@ print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserve
 
 envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_memory=False)
 # envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
-# env = SM64_ENV_CURIOSITY()
 
 
 last_log_time = time.time()
@@ -186,7 +188,7 @@ with tqdm.tqdm() as iterbar:
         rewards   = []
         masks     = []
         entropy = 0
-        
+
         obs, info = envs.reset()
         for _ in tqdm.tqdm(range(steps_per_iter), leave=False):
             # print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserved(0),torch.cuda.memory_allocated(0))
@@ -198,8 +200,9 @@ with tqdm.tqdm() as iterbar:
 
             # Step
             action_raw = dist.sample()
-            stick_actions = clamp_stick(action_raw[:, 0:2] * 40).cpu()
-            button_actions = (action_raw[:, 2:5] > 0).bool().cpu()
+            stick_actions = clamp_stick(action_raw[:, 0:2] * 80).cpu()
+
+            button_actions = (action_raw[:, 2:5] > 0.8).bool().cpu()
             action = (stick_actions, button_actions)
             next_obs, reward, done, truncated, info =  envs.step(action)
 
@@ -227,13 +230,14 @@ with tqdm.tqdm() as iterbar:
             _, last_value = agent.forward(last_torchObs)
             returns = compute_gae(last_value, rewards, masks, values)
 
+        # Cat and detach. Each players' experiences are now on the same dimension
         returns = torch.cat(returns).detach()
         log_probs = torch.cat(log_probs).detach()
         values    = torch.cat(values).detach()
         obs_s = cat_and_detach_obs(obs_s)
         actions   = torch.cat(actions)
         advantages = returns - values
-
+    
         ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, advantages)
 
         iter += 1
@@ -242,7 +246,6 @@ with tqdm.tqdm() as iterbar:
             torch.save(agent.state_dict(), f"{run_name}_{iter}.pth")
 
         if iter % iter_per_log == 0:
-            last_log_time = time.time()
             step_count = iter * steps_per_iter * n_envs
             writer.add_scalar("Entropy", entropy, step_count)
             writer.add_scalar("Advantage", advantages.mean(), step_count)
@@ -250,7 +253,7 @@ with tqdm.tqdm() as iterbar:
             writer.add_scalar("Return", returns.mean(), step_count)
             writer.add_scalar("Average reward", returns.mean() / steps_per_iter, step_count)
             writer.add_scalar("SPS", iter_per_log * steps_per_iter * n_envs / (time.time() - last_log_time), step_count)
-        
+            last_log_time = time.time()
         # envs.close()
         # clear_sm64_exes()
 

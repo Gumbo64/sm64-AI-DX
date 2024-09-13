@@ -613,6 +613,12 @@ void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount
     velBias[2] *= cameraDirBiasFactor;
 
     for (int i = 0; i < amount; i++) {
+        if (i == amount / 2) {
+            // sample half of the rays from the player, half from camera
+            vec3f_copy(start, gMarioStates[0].pos);
+            start[1] += 200.0f;
+        }
+
         Vec3f dir;
         sample_sphere_surface(dir, 1);
 

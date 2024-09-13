@@ -14,7 +14,7 @@ import visualiser
 # FPS_AMOUNT = None
 # num_points=1000, fps_amount = 300, max_ray_length=10000,
 POINTS_PER_FRAME = 1000
-FPS_AMOUNT = 100
+FPS_AMOUNT = 10000
 MAX_RAY_LENGTH = 8000
 
 clear_sm64_exes()
@@ -33,7 +33,6 @@ with tqdm.tqdm() as pbar:
 
         action = [(stickX, stickY), (buttonA, buttonB, buttonZ)]
         obs, reward, done, truncated, info = game.step(action)
-        print(len(obs))
         visualiser.visualise_game_tokens(obs)
 
         pbar.update(1)
