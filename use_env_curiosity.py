@@ -37,12 +37,12 @@ while True:
     # obs, reward, done, info = env.step(action)
     # visualise_game_tokens(obs[0])
 
-    if i % print_time == 0:
-        stickX = random.randint(-80, 80)
-        stickY = random.randint(-80, 80)
-        buttonA, buttonB = random.choices([0, 1], weights=[0.99, 0.01], k=2)
-        action = [(stickX, stickY), (buttonA, buttonB, 0)]
-        actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])
+    # if i % print_time == 0:
+    stickX = random.randint(-80, 80)
+    stickY = random.randint(-80, 80)
+    buttonA, buttonB = random.choices([0, 1], weights=[0.99, 0.01], k=2)
+    action = [(stickX, stickY), (buttonA, buttonB, 0)]
+    actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])
 
     # print(actions)
     obs, reward, done, truncated, info = envs.step(actions)

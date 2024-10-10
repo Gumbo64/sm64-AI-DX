@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=50, num_points=1000, fps_amount=100,
+    def __init__(self, multi_step=4, max_visits=1000, num_points=1000, fps_amount=100,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -60,6 +60,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
     def get_observation(self):
         player_tokens = []
         self.my_pos = []
+        self.my_vel = []
         localNetPlayer = self.game.get_network_player(0)
         for i in range(16):
             netPlayer = self.game.get_network_player(i)
@@ -73,6 +74,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
             if i == 0:
                 one_hot = np.array([1,0,0])
                 self.my_pos = np.array(state.pos)
+                self.my_vel = np.array(state.vel)
             else:
                 one_hot = np.array([0,1,0])
 
@@ -95,7 +97,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
         point_tokens = point_tokens[np.where(~np.all(normal_array == 0, axis=1))] # Remove zero normals
 
         if self.fps_amount < len(point_tokens):
-            point_tokens = point_tokens[fpsample.fps_sampling(point_tokens[:, 1:4], self.fps_amount)]
+            point_tokens = point_tokens[fpsample.fps_sampling(point_tokens[:, 3:6], self.fps_amount)]
 
 
         player_empty = len(player_tokens) == 0
@@ -126,8 +128,12 @@ class SM64_ENV_CURIOSITY(gym.Env):
             return 0
 
         my_visits = self.curiosity.get_visits(self.my_pos)
-        # reward = (1 - my_visits / self.max_visits)
-        reward = math.exp(-4 * my_visits / self.max_visits)
+        
+        # curiosity_reward = (1 - my_visits / self.max_visits)
+        curiosity_reward = math.exp(-4 * my_visits / self.max_visits)
+        vel_reward = math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50
+        # reward = 0.8 * curiosity_reward + 0.2 * vel_reward
+        reward = 0.5 * curiosity_reward + 0.5 * vel_reward
         return reward 
 
     def reset(self):
