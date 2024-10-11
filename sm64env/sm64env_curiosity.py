@@ -46,6 +46,17 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = buttons
 
+        # non zero velocity. Rotate the stick input to the player's perspective
+        if self.my_vel.any():
+            angle = -math.atan2(self.my_vel[2], self.my_vel[0])
+            stickX, stickY = np.dot([stickX, stickY], np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]]))
+            length = np.sqrt(stickX ** 2 + stickY ** 2)
+            if length > 80:
+                stickX = 80 * stickX / length
+                stickY = 80 * stickY / length
+            stickX, stickY = round(stickX), round(stickY)
+            stickX, stickY = np.clip([stickX, stickY], -80, 80)
+
         self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
         self.game.step_game(num_steps=self.multi_step)
         
@@ -61,8 +72,6 @@ class SM64_ENV_CURIOSITY(gym.Env):
     
     def get_observation(self):
         player_tokens = []
-        self.my_pos = np.array([0,0,0])
-        self.my_vel = np.array([0,0,0])
         localNetPlayer = self.game.get_network_player(0)
         for i in range(16):
             netPlayer = self.game.get_network_player(i)
@@ -109,20 +118,26 @@ class SM64_ENV_CURIOSITY(gym.Env):
         elif player_empty:
             tokens = point_tokens
         elif point_empty:
+            player_tokens[:, 6:9] /= 50 # Normalize velocity for players (not point normals though)
             tokens = player_tokens
         else:
+            player_tokens[:, 6:9] /= 50 # Normalize velocity for players (not point normals though)
             tokens = np.concatenate([player_tokens, point_tokens])
 
         if len(self.my_pos) == 0:
             return tokens
 
         # Make coordinates relative to the main player
-        my_x, my_y, my_z = self.my_pos
-        tokens[:] -= np.array([0,0,0,my_x,my_y,my_z,0,0,0,0])
+        tokens[:, 3:6] -= self.my_pos
         tokens[:, 3:6] /= 8192 # Normalize position
 
-        player_indices = np.where(tokens[:, 2] == 0)
-        tokens[player_indices, 6:9] /= 50    # Normalize velocity for players (not point normals though)
+        # Rotate the coordinates to the main player's perspective
+        angle = math.atan2(self.my_vel[2], self.my_vel[0])
+        rotation_matrix = np.array([[math.cos(angle), 0, -math.sin(angle)], [0, 1, 0], [math.sin(angle), 0, math.cos(angle)]])
+        tokens[:, 3:6] = np.dot(tokens[:, 3:6], rotation_matrix)
+        tokens[:, 6:9] = np.dot(tokens[:, 6:9], rotation_matrix)
+
+
         tokens[:, 9] /= self.max_visits # Normalize visits
         return tokens
 

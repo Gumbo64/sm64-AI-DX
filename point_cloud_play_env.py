@@ -21,18 +21,18 @@ clear_sm64_exes()
 
 game = SM64_ENV_CURIOSITY(server=True, server_port=7777, fps_amount=FPS_AMOUNT, num_points=POINTS_PER_FRAME, max_ray_length=MAX_RAY_LENGTH)
 
-with tqdm.tqdm() as pbar:
-    while True:
-        stickX = random.randint(-80, 80)
-        stickY = random.randint(-80, 80)
-        buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.9, 0.1], k=3)
-        # buttonL = random.choices([0, 1], weights=[0.01, 0.99], k=1)[0]
-        stickX = 0
-        stickY = 80
-        buttonA, buttonB, buttonZ = 0, 0, 0
+# with tqdm.tqdm() as pbar:
+while True:
+    stickX = random.randint(-80, 80)
+    stickY = random.randint(-80, 80)
+    buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.9, 0.1], k=3)
+    # buttonL = random.choices([0, 1], weights=[0.01, 0.99], k=1)[0]
+    # stickX = 0
+    stickY = 80
+    buttonA, buttonB, buttonZ = 0, 0, 0
 
-        action = [(stickX, stickY), (buttonA, buttonB, buttonZ)]
-        obs, reward, done, truncated, info = game.step(action)
-        visualiser.visualise_game_tokens(obs)
-
-        pbar.update(1)
+    action = [(stickX, stickY), (buttonA, buttonB, buttonZ)]
+    obs, reward, done, truncated, info = game.step(action)
+    visualiser.visualise_game_tokens(obs)
+    print(obs[0][3:9])
+    # pbar.update(1)
