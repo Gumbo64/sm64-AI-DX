@@ -120,7 +120,9 @@ class SM64_ENV_CURIOSITY(gym.Env):
         my_x, my_y, my_z = self.my_pos
         tokens[:] -= np.array([0,0,0,my_x,my_y,my_z,0,0,0,0])
         tokens[:, 3:6] /= 8192 # Normalize position
-        tokens[:, 6:9] /= 50    # Normalize velocity
+
+        player_indices = np.where(tokens[:, 2] == 0)
+        tokens[player_indices, 6:9] /= 50    # Normalize velocity for players (not point normals though)
         tokens[:, 9] /= self.max_visits # Normalize visits
         return tokens
 
