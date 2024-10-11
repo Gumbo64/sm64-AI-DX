@@ -29,7 +29,7 @@ def visualise_game(marioStates, points_array, normals_array):
     plt.pause(0.001)
     ax.clear()
 
-def visualise_game_tokens(tokens, pause_time=0.001):
+def visualise_game_tokens(tokens, pause_time=0.1):
     # if pause_time == 0:
     #     fig = plt.figure()
     #     ax = fig.add_subplot(111, projection='3d', computed_zorder=False)
@@ -53,7 +53,6 @@ def visualise_game_tokens(tokens, pause_time=0.001):
     
     point_tokens = tokens[point_token_indices]
     point_tokens[:, 3:6] *= pos_scaler
-    point_tokens[:, 6:9] *= vel_scaler
     ax.scatter(-point_tokens[:, 3], point_tokens[:, 5], point_tokens[:, 4], c=(point_tokens[:, 6:9] + 1)/2, marker='o', s=10, zorder=10)
 
     ax.set_xlabel('X')
@@ -66,12 +65,13 @@ def visualise_game_tokens(tokens, pause_time=0.001):
     ax.set_ylim([-8192,8192])
     ax.set_zlim([-8192,8192])
     # Show the plot
-    # if pause_time == 0:
-    #     plt.show()
+    if pause_time == 0:
+        plt.show()
     # else:
     plt.draw()
     plt.pause(pause_time)
     ax.clear()
+    # plt.show()
 
 
 def visualise_curiosity(curiosity, pause_time=1):

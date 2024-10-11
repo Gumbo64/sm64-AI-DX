@@ -19,8 +19,8 @@ def make_env(i):
         # return SM64_ENV_CURIOSITY(multi_step=multi_step, server=True, server_port=7777 + i)
     return mkenv
 
-envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_memory=False)
-# envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
+# envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_memory=False)
+envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
 
 
 obs, info = envs.reset()
@@ -38,8 +38,9 @@ while True:
     # visualise_game_tokens(obs[0])
 
     # if i % print_time == 0:
-    stickX = random.randint(-80, 80)
-    stickY = random.randint(-80, 80)
+    # stickX = random.randint(0, 80)
+    # stickY = random.randint(0, 80)
+    stickX, stickY = 80, 0
     buttonA, buttonB = random.choices([0, 1], weights=[0.99, 0.01], k=2)
     action = [(stickX, stickY), (buttonA, buttonB, 0)]
     actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])

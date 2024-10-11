@@ -8,12 +8,17 @@ class CURIOSITY:
         self.bounding_size = 8192
         self.radius = 200
 
-        self.F_shape = np.array([2*self.bounding_size // self.chunk_xz_size, 2*self.bounding_size // self.chunk_y_size, 2*self.bounding_size // self.chunk_xz_size])
+        self.F_shape = np.array([2 * self.bounding_size // self.chunk_xz_size, 2 * self.bounding_size // self.chunk_y_size, 2 * self.bounding_size // self.chunk_xz_size])
  
         self.sphere_mask = self.create_mask()
+
         self.F = np.zeros(shape=self.F_shape, dtype=int)
+    
     def reset(self):
         self.F = np.zeros(shape=self.F_shape, dtype=int)
+    
+    def soft_reset(self):
+        self.F = self.F // 2
 
     def create_ellipsoid_tensor(self,shape_sphere):
         a, b, c = shape_sphere

@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=1000, num_points=1000, fps_amount=100,
+    def __init__(self, multi_step=4, max_visits=1000, num_points=1000, fps_amount=100, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -35,8 +35,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
         self.num_points = num_points
         self.max_ray_length = max_ray_length
         self.fps_amount = fps_amount if fps_amount is not None else num_points
+        self.soft_reset = soft_reset
 
-        self.my_pos = []
+        self.my_pos = np.array([0,0,0])
+        self.my_vel = np.array([0,0,0])
 
     def step(self, action):
         stick, buttons = action
@@ -59,8 +61,8 @@ class SM64_ENV_CURIOSITY(gym.Env):
     
     def get_observation(self):
         player_tokens = []
-        self.my_pos = []
-        self.my_vel = []
+        self.my_pos = np.array([0,0,0])
+        self.my_vel = np.array([0,0,0])
         localNetPlayer = self.game.get_network_player(0)
         for i in range(16):
             netPlayer = self.game.get_network_player(i)
@@ -139,7 +141,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
     def reset(self):
         self.game.set_controller(buttonL=1)
         self.game.step_game()
-        self.curiosity.reset()
+        if self.soft_reset:
+            self.curiosity.soft_reset()
+        else:
+            self.curiosity.reset()
         return self.get_observation(), {}
     
 

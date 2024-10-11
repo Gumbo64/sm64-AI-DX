@@ -24,10 +24,10 @@ import math
 clear_sm64_exes()
 
 n_envs = 16
-steps_per_iter = 400
+steps_per_iter = 1200
 ppo_epochs = 4
-# mini_batch_size = 1024 # fills ~15GB of VRAM
-mini_batch_size = 128 # fills ~15GB of VRAM
+mini_batch_size = 1024 # fills ~15GB of VRAM
+# mini_batch_size = 128 # fills ~15GB of VRAM
 # mini_batch_size = 800 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
@@ -90,7 +90,7 @@ class Agent(nn.Module):
 
 def make_env(i):
     def mkenv():
-        return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)))
+        return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
         # return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i)
     return mkenv
 
@@ -162,8 +162,8 @@ agent = Agent().to(device)
 
 # agent.load_state_dict(torch.load("ppo_1728480135.3339143_40.pth"))
 # agent.load_state_dict(torch.load("ppo_1728480135.3339143_220.pth"))
-agent.load_state_dict(torch.load("ppo_1728491932.1914167_3090.pth"))
-agent.actor_log_std.data.fill_(0)
+# agent.load_state_dict(torch.load("ppo_1728491932.1914167_3090.pth"))
+# agent.actor_log_std.data.fill_(0)
 
 optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
