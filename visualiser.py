@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-
+import time
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d', computed_zorder=False)
 
@@ -103,7 +103,8 @@ def visualise_curiosity(curiosity, pause_time=1):
     ax.set_zlabel('Y')
     ax.set_title('Mario 64 Curiosity')
 
-    plt.savefig('curiosity.png')
+    # plt.savefig('curiosity.png')
+
     with open('picklePlot.pickle', 'wb') as file:
         pickle.dump(fig, file)
     # Show the plot
@@ -112,5 +113,5 @@ def visualise_curiosity(curiosity, pause_time=1):
     # else:
     # plt.draw()
     # plt.pause(pause_time)
-    ax.clear()
-    # 
+    # ax.clear()
+    # # 

@@ -33,6 +33,7 @@ while True:
 
     action = [(stickX, stickY), (buttonA, buttonB, buttonZ)]
     obs, reward, done, truncated, info = game.step(action)
-    visualiser.visualise_game_tokens(obs)
+    # visualiser.visualise_game_tokens(obs)
+    visualiser.visualise_curiosity(game.curiosity)
     
     # pbar.update(1)

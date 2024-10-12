@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=1000, num_points=1000, fps_amount=100, soft_reset=False,
+    def __init__(self, multi_step=4, max_visits=100, num_points=1000, fps_amount=100, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -85,6 +85,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
             faceVector = np.array([math.sin(faceAngle), 0, math.cos(faceAngle)])
 
             visits = np.array([self.curiosity.get_visits(pos)])
+            # visits = np.array([self.curiosity.get_max_visits(pos)])
 
             self.curiosity.add_circle(pos) # Curiosity update for each player
 
@@ -94,7 +95,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
         one_hot = np.tile(np.array([0,0,1]), (self.num_points, 1))
         pos_array, normal_array = self.game.get_raycast_sphere_with_normal(amount=self.num_points, maxRayLength=self.max_ray_length)
+        
         visits = self.curiosity.get_visits_multi(pos_array)
+        # visits = self.curiosity.get_max_visits_multi(pos_array)
+
         visits = np.expand_dims(visits, axis=1)
 
         filler = np.zeros((self.num_points, 3))
@@ -146,6 +150,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
             return 0
 
         my_visits = self.curiosity.get_visits(self.my_pos)
+        # my_visits = self.curiosity.get_max_visits(self.my_pos)
         
         # curiosity_reward = (1 - my_visits / self.max_visits)
         curiosity_reward = math.exp(-4 * my_visits / self.max_visits)

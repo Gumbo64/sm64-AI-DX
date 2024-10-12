@@ -229,7 +229,7 @@ with tqdm.tqdm() as iterbar:
             obs = next_obs
             #logging here
 
-        # visualise_curiosity(envs.get_attr('curiosity')[0])
+        visualise_curiosity(envs.get_attr('curiosity')[0])
 
         # Bootstrapping the last obs
         with torch.no_grad():

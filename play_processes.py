@@ -29,7 +29,7 @@ while True:
     # 
     # obs, reward, done, info = env.step(action)
     # visualise_game_tokens(obs)
-    # visualise_curiosity(env.curiosity)
+    visualise_curiosity(envs.get_attr('curiosity')[0])
     
     actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])
 
