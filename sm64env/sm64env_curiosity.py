@@ -80,11 +80,15 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
             pos = np.array(state.pos)
             vel = np.array(state.vel)
+            faceAngle = np.array(state.faceAngle) # 3d array
+            faceAngle = faceAngle[1] * np.pi / 0x8000 # convert from sm64 units
+            faceVector = np.array([math.sin(faceAngle), 0, math.cos(faceAngle)])
+
             visits = np.array([self.curiosity.get_visits(pos)])
 
             self.curiosity.add_circle(pos) # Curiosity update for each player
 
-            token = np.concatenate([one_hot, pos, vel, visits])
+            token = np.concatenate([one_hot, pos, vel, faceVector, visits])
             player_tokens.append(token)
         player_tokens = np.array(player_tokens)
 
@@ -93,7 +97,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
         visits = self.curiosity.get_visits_multi(pos_array)
         visits = np.expand_dims(visits, axis=1)
 
-        point_tokens = np.concatenate([one_hot, pos_array, normal_array, visits], axis=1)
+        filler = np.zeros((self.num_points, 3))
+
+
+        point_tokens = np.concatenate([one_hot, pos_array, normal_array, filler, visits], axis=1)
         point_tokens = point_tokens[np.where(~np.all(normal_array == 0, axis=1))] # Remove zero normals
 
         if self.fps_amount < len(point_tokens):
@@ -127,9 +134,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
         rotation_matrix = np.array([[math.cos(angle), 0, -math.sin(angle)], [0, 1, 0], [math.sin(angle), 0, math.cos(angle)]])
         tokens[:, 3:6] = np.dot(tokens[:, 3:6], rotation_matrix)
         tokens[:, 6:9] = np.dot(tokens[:, 6:9], rotation_matrix)
+        tokens[: ,9:12] = np.dot(tokens[:, 9:12], rotation_matrix)
 
         tokens[:, 3:6] /= self.max_ray_length # Normalize position
-        tokens[:, 9] /= self.max_visits # Normalize visits
+        tokens[:, 12] /= self.max_visits # Normalize visits
         return tokens
 
     def calculate_reward(self, obs):

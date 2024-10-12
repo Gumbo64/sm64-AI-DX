@@ -27,8 +27,6 @@ n_envs = 16
 steps_per_iter = 1200
 ppo_epochs = 4
 mini_batch_size = 1024 # fills ~15GB of VRAM
-# mini_batch_size = 128 # fills ~15GB of VRAM
-# mini_batch_size = 800 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
 
@@ -40,7 +38,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.num_inputs = 10
+        self.num_inputs = 13
         self.token_size = 128
         self.num_outputs = 5
 

@@ -42,6 +42,13 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     point_token_indices = np.where(tokens[:, 2] == 1)
 
     main_player_tokens = tokens[main_player_indice]
+
+    line_start = main_player_tokens[:, 3:6]
+    line_end = line_start + main_player_tokens[:, 9:12] * 0.1
+    for i in range(len(line_start)):
+        ax.plot([-line_start[i, 0], -line_end[i, 0]], [line_start[i, 2], line_end[i, 2]], [line_start[i, 1], line_end[i, 1],], c='red', zorder=12)
+
+    
     # main_player_tokens[:, 3:6] *= pos_scaler
     # main_player_tokens[:, 6:9] *= vel_scaler
     ax.scatter(-main_player_tokens[:, 3], main_player_tokens[:, 5], main_player_tokens[:, 4], c='red', marker='o', s=10, zorder=11)
