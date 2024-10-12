@@ -50,6 +50,10 @@ class SM64_GAME:
         self.sm64_CDLL.raycast_sphere_with_normal.argtypes = [ctypes.POINTER(Vec3f), ctypes.POINTER(Vec3f), ctypes.c_int, ctypes.c_float, ctypes.c_float]
         self.sm64_CDLL.raycast_sphere_with_normal.restype = None
 
+        self.sm64_CDLL.get_lakitu_pos.argtypes = []
+        self.sm64_CDLL.get_lakitu_pos.restype = ctypes.POINTER(Vec3f)
+
+
         self.commands = [self.sm64_exe_path, "--hide-loading-screen", "--skip-update-check",
                          "--savepath", curr_dir, 
                          "--configfile", config_file]
@@ -130,3 +134,6 @@ class SM64_GAME:
         ctypes_normal_arr = (Vec3f * amount)()
         self.sm64_CDLL.raycast_sphere_with_normal(ctypes_hitpos_arr, ctypes_normal_arr, amount, maxRayLength, cameraDirBiasFactor)
         return np.array(ctypes_hitpos_arr), np.array(ctypes_normal_arr)
+
+    def get_lakitu_pos(self):
+        return np.array(self.sm64_CDLL.get_lakitu_pos().contents)

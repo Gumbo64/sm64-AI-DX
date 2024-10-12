@@ -1,5 +1,5 @@
 fullscreen false
-window_x 1078
+window_x 992
 window_y 561
 window_w 1063
 window_h 831

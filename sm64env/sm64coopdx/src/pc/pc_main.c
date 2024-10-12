@@ -546,7 +546,14 @@ struct MarioState *get_mario_state(int index) {
 
 struct NetworkPlayer *get_network_player(int index) {
     return &gNetworkPlayers[index];
- }
+}
+
+
+#include "game/camera.h"
+
+Vec3f *get_lakitu_pos() {
+    return &gLakituState.pos;
+}
 
 int local_index_to_global(int index) {
     return gNetworkPlayers[index].globalIndex;

@@ -33,8 +33,8 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     # if pause_time == 0:
     #     fig = plt.figure()
     #     ax = fig.add_subplot(111, projection='3d', computed_zorder=False)
-    pos_scaler = 8192
-    vel_scaler = 50
+    # pos_scaler = 8192
+    # vel_scaler = 50
 
 
     main_player_indice = np.where(tokens[:, 0] == 1)
@@ -42,17 +42,17 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     point_token_indices = np.where(tokens[:, 2] == 1)
 
     main_player_tokens = tokens[main_player_indice]
-    main_player_tokens[:, 3:6] *= pos_scaler
-    main_player_tokens[:, 6:9] *= vel_scaler
+    # main_player_tokens[:, 3:6] *= pos_scaler
+    # main_player_tokens[:, 6:9] *= vel_scaler
     ax.scatter(-main_player_tokens[:, 3], main_player_tokens[:, 5], main_player_tokens[:, 4], c='red', marker='o', s=10, zorder=11)
 
     player_tokens = tokens[player_token_indices]
-    player_tokens[:, 3:6] *= pos_scaler
-    player_tokens[:, 6:9] *= vel_scaler
+    # player_tokens[:, 3:6] *= pos_scaler
+    # player_tokens[:, 6:9] *= vel_scaler
     ax.scatter(-player_tokens[:, 3], player_tokens[:, 5], player_tokens[:, 4], c='blue', marker='o', s=10, zorder = 11)
     
     point_tokens = tokens[point_token_indices]
-    point_tokens[:, 3:6] *= pos_scaler
+    # point_tokens[:, 3:6] *= pos_scaler
     ax.scatter(-point_tokens[:, 3], point_tokens[:, 5], point_tokens[:, 4], c=(point_tokens[:, 6:9] + 1)/2, marker='o', s=10, zorder=10)
 
     ax.set_xlabel('X')
@@ -61,9 +61,9 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     ax.set_title('Mario 64 Point Cloud')
 
     # Set the axis limits to fit the data
-    ax.set_xlim([-8192,8192])
-    ax.set_ylim([-8192,8192])
-    ax.set_zlim([-8192,8192])
+    # ax.set_xlim([-8192,8192])
+    # ax.set_ylim([-8192,8192])
+    # ax.set_zlim([-8192,8192])
     # Show the plot
     if pause_time == 0:
         plt.show()

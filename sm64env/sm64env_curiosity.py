@@ -46,17 +46,6 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = buttons
 
-        # non zero velocity. Rotate the stick input to the player's perspective
-        if self.my_vel.any():
-            angle = -math.atan2(self.my_vel[2], self.my_vel[0])
-            stickX, stickY = np.dot([stickX, stickY], np.array([[math.cos(angle), -math.sin(angle)], [math.sin(angle), math.cos(angle)]]))
-            length = np.sqrt(stickX ** 2 + stickY ** 2)
-            if length > 80:
-                stickX = 80 * stickX / length
-                stickY = 80 * stickY / length
-            stickX, stickY = round(stickX), round(stickY)
-            stickX, stickY = np.clip([stickX, stickY], -80, 80)
-
         self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
         self.game.step_game(num_steps=self.multi_step)
         
@@ -127,17 +116,19 @@ class SM64_ENV_CURIOSITY(gym.Env):
         if len(self.my_pos) == 0:
             return tokens
 
-        # Make coordinates relative to the main player
-        tokens[:, 3:6] -= self.my_pos
-        tokens[:, 3:6] /= 8192 # Normalize position
+        # Rotate and position the coordinates to the lakitu's perspective
+        origin = self.game.get_lakitu_pos()
+        diff = self.my_pos - origin
 
-        # Rotate the coordinates to the main player's perspective
-        angle = math.atan2(self.my_vel[2], self.my_vel[0])
+        tokens[:, 3:6] -= origin # Translate position
+        
+        angle = math.atan2(diff[2], diff[0])
+
         rotation_matrix = np.array([[math.cos(angle), 0, -math.sin(angle)], [0, 1, 0], [math.sin(angle), 0, math.cos(angle)]])
         tokens[:, 3:6] = np.dot(tokens[:, 3:6], rotation_matrix)
         tokens[:, 6:9] = np.dot(tokens[:, 6:9], rotation_matrix)
 
-
+        tokens[:, 3:6] /= self.max_ray_length # Normalize position
         tokens[:, 9] /= self.max_visits # Normalize visits
         return tokens
 
@@ -151,8 +142,8 @@ class SM64_ENV_CURIOSITY(gym.Env):
         # curiosity_reward = (1 - my_visits / self.max_visits)
         curiosity_reward = math.exp(-4 * my_visits / self.max_visits)
         vel_reward = math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50
-        # reward = 0.8 * curiosity_reward + 0.2 * vel_reward
-        reward = 0.5 * curiosity_reward + 0.5 * vel_reward
+        reward = 0.9 * curiosity_reward + 0.1 * vel_reward
+        # reward = 0.5 * curiosity_reward + 0.5 * vel_reward
         return reward 
 
     def reset(self):

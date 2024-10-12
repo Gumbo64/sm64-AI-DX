@@ -74,12 +74,13 @@ function update_mario(m)
             player_respawn(m)
         end
         -- set_camera(m)
-        if m.controller.stickMag ~= 0 then
-            m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
-            local angle = atan2s(m.controller.stickX, m.controller.stickY) - gLakituState.yaw
-            m.controller.stickX = m.controller.stickMag * coss(angle)
-            m.controller.stickY = m.controller.stickMag * sins(angle)
-        end
+        -- Removing the relative controls
+        -- if m.controller.stickMag ~= 0 then
+        --     m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
+        --     local angle = atan2s(m.controller.stickX, m.controller.stickY) - gLakituState.yaw
+        --     m.controller.stickX = m.controller.stickMag * coss(angle)
+        --     m.controller.stickY = m.controller.stickMag * sins(angle)
+        -- end
     end
 end
 

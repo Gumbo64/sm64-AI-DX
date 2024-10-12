@@ -40,7 +40,7 @@ while True:
     # if i % print_time == 0:
     # stickX = random.randint(0, 80)
     # stickY = random.randint(0, 80)
-    stickX, stickY = 80, 0
+    stickX, stickY = 0, 80
     buttonA, buttonB = random.choices([0, 1], weights=[0.99, 0.01], k=2)
     action = [(stickX, stickY), (buttonA, buttonB, 0)]
     actions = ([action[0] for _ in range(n_envs)], [action[1] for _ in range(n_envs)])
