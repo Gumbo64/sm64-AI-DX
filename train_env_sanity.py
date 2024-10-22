@@ -1,6 +1,6 @@
 import gym.vector
 import gym.vector
-from sm64env.sm64env_curiosity import SM64_ENV_CURIOSITY
+from sm64env.sm64env_sanity import SM64_ENV_SANITY
 from sm64env.load_sm64_CDLL import clear_sm64_exes
 from visualiser import visualise_game_tokens, visualise_curiosity
 import random
@@ -24,9 +24,9 @@ import math
 clear_sm64_exes()
 
 n_envs = 16
-steps_per_iter = 1200
+steps_per_iter = 400
 ppo_epochs = 4
-mini_batch_size = 1024 # fills ~15GB of VRAM
+mini_batch_size = 512 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
 
@@ -38,8 +38,8 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.num_inputs = 13
-        self.token_size = 128
+        self.num_inputs = 12
+        self.token_size = 512
         self.num_outputs = 5
 
         self.preprocess = nn.Sequential(
@@ -47,20 +47,24 @@ class Agent(nn.Module):
             nn.Tanh(),
         )
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=4, dim_feedforward=512, batch_first=True)
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=3)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=8, dim_feedforward=2048, batch_first=True)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=6)
         
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(self.token_size, 128)),
+            layer_init(nn.Linear(self.token_size, 1024)),
             nn.Tanh(),
-            layer_init(nn.Linear(128, 1), std=1.0),
+            layer_init(nn.Linear(1024, 512)),
+            nn.Tanh(),
+            layer_init(nn.Linear(512, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(self.token_size, 128)),
+            layer_init(nn.Linear(self.token_size, 1024)),
+            nn.Tanh(),
+            layer_init(nn.Linear(1024, 1024)),
             nn.Tanh(),
             # layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
-            layer_init(nn.Linear(128, self.num_outputs)),
-            nn.Tanh(),
+            layer_init(nn.Linear(1024, self.num_outputs)),
+            # nn.Tanh(),
         )
         self.actor_log_std = nn.Parameter(torch.zeros(1, self.num_outputs))
 
@@ -88,8 +92,8 @@ class Agent(nn.Module):
 
 def make_env(i):
     def mkenv():
-        return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        # return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i)
+        # return SM64_ENV_SANITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)))
+        return SM64_ENV_SANITY(server = True, server_port=7777 + i)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
@@ -159,17 +163,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 agent = Agent().to(device)
 
 # agent.load_state_dict(torch.load("ppo_1728480135.3339143_40.pth"))
-# agent.load_state_dict(torch.load("ppo_1728480135.3339143_220.pth"))
-# agent.load_state_dict(torch.load("ppo_1728491932.1914167_3090.pth"))
-# agent.load_state_dict(torch.load("ppo_1728754329.291212_340.pth"))
-# agent.load_state_dict(torch.load("ppo_1728804252.0307822_160.pth"))
-# agent.load_state_dict(torch.load("ppo_1728814183.1124492_110.pth"))
-agent.load_state_dict(torch.load("ppo_1728877177.6916175_150.pth"))
+# agent.load_state_dict(torch.load("ppo_1728913197.2295485_140.pth"))
+# agent.load_state_dict(torch.load("ppo_1729008391.1956275_270.pth"))
+agent.load_state_dict(torch.load("models/sanity_ppo_1729532246.2260573_290.pth"))
+
 # agent.actor_log_std.data.fill_(0)
 
 optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
-run_name = f"ppo_{time.time()}"
+run_name = f"sanity_ppo_{time.time()}"
 wandb.init(
     project="sm64env",
     sync_tensorboard=True,
@@ -232,8 +234,6 @@ with tqdm.tqdm() as iterbar:
 
             obs = next_obs
             #logging here
-
-        # visualise_curiosity(envs.get_attr('curiosity')[0])
 
         # Bootstrapping the last obs
         with torch.no_grad():

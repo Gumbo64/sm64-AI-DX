@@ -53,6 +53,9 @@ class SM64_GAME:
         self.sm64_CDLL.get_lakitu_pos.argtypes = []
         self.sm64_CDLL.get_lakitu_pos.restype = ctypes.POINTER(Vec3f)
 
+        self.sm64_CDLL.get_lakitu_yaw.argtypes = []
+        self.sm64_CDLL.get_lakitu_yaw.restype = ctypes.c_int16
+
 
         self.commands = [self.sm64_exe_path, "--hide-loading-screen", "--skip-update-check",
                          "--savepath", curr_dir, 
@@ -137,3 +140,6 @@ class SM64_GAME:
 
     def get_lakitu_pos(self):
         return np.array(self.sm64_CDLL.get_lakitu_pos().contents)
+    
+    def get_lakitu_yaw(self):
+        return self.sm64_CDLL.get_lakitu_yaw()

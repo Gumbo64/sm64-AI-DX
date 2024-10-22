@@ -555,6 +555,10 @@ Vec3f *get_lakitu_pos() {
     return &gLakituState.pos;
 }
 
+s16 get_lakitu_yaw() {
+    return gLakituState.yaw;
+}
+
 int local_index_to_global(int index) {
     return gNetworkPlayers[index].globalIndex;
 }

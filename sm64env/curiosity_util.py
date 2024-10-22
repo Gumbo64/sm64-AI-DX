@@ -4,7 +4,10 @@ class CURIOSITY:
     def __init__(self, max_visits=1000):
         self.max_visits = max_visits
         self.chunk_xz_size = 40
-        self.chunk_y_size = 200
+
+        self.chunk_y_size = 100
+        # self.chunk_y_size = 200
+        
         self.bounding_size = 8192
         self.radius = 200
 
@@ -99,14 +102,16 @@ class CURIOSITY:
         indices = self.multi_pos_to_index(positions)
         return self.F[indices[:, 0], indices[:, 1], indices[:, 2]]
 
-    def get_max_visits(self, pos):
-        sphere = self.sphere_mask + self.index_to_pos(pos)
+
+    # Get the maximum number of visits in a sphere around the position
+    def get_sphere_visits(self, pos):
+        sphere = self.sphere_mask + self.pos_to_index(pos)
         sphere = sphere[((sphere) >= 0).all(axis=1) & ((sphere) < np.array(self.F_shape)).all(axis=1)]
         visits = self.F[sphere[:, 0], sphere[:, 1], sphere[:, 2]]
         return np.max(visits)
 
     
-    def get_max_visits_multi(self, positions):
-        return np.array([self.get_max_visits(pos) for pos in positions])
+    def get_sphere_visits_multi(self, positions):
+        return np.array([self.get_sphere_visits(pos) for pos in positions])
 
 
