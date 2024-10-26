@@ -15,7 +15,7 @@ import visualiser
 # num_points=1000, fps_amount = 300, max_ray_length=10000,
 POINTS_PER_FRAME = 1000
 FPS_AMOUNT = 10000
-MAX_RAY_LENGTH = 8000
+MAX_RAY_LENGTH = 5000
 
 clear_sm64_exes()
 
@@ -33,7 +33,7 @@ while True:
 
     action = [(stickX, stickY), (buttonA, buttonB, buttonZ)]
     obs, reward, done, truncated, info = game.step(action)
-    # visualiser.visualise_game_tokens(obs)
-    visualiser.visualise_curiosity(game.curiosity)
+    visualiser.visualise_game_tokens(obs)
+    # visualiser.visualise_curiosity(game.curiosity)
     
     # pbar.update(1)

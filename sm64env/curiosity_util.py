@@ -49,7 +49,7 @@ class CURIOSITY:
         return indices, values
 
     def add_circle(self,centre):
-        centre = np.array(centre, dtype=int)
+        centre = np.array(centre)
         indices = self.sphere_mask.copy()
         values = self.sphere_values.copy()
 
@@ -62,12 +62,35 @@ class CURIOSITY:
         # self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += values
         self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
         self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.clip(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], 0, self.max_visits)
+        # self.F[indices] += 1
 
     def add_circles(self,centres):
         if len(centres) == 0:
             return
-        for centre in centres:
-            self.add_circle(centre)
+        # for centre in centres:
+        #     self.add_circle(centre)
+        centre_indices = self.multi_pos_to_index(centres)
+        sphere_indices = self.sphere_mask
+        
+        # Reshape A to (n, 1, 3) and B to (1, m, 3) for broadcasting
+        A_expanded = centre_indices[:, np.newaxis, :]
+        B_expanded = sphere_indices[np.newaxis, :, :]
+        
+        # Calculate all combinations using broadcasting
+        combinations = A_expanded + B_expanded
+        indices = combinations.reshape(-1, 3)
+
+        indices_indices = ((indices) >= 0).all(axis=1) & ((indices) < np.array(self.F_shape)).all(axis=1)
+        indices = indices[indices_indices]
+        if len(indices) == 0:
+            return
+        self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
+        self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.clip(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], 0, self.max_visits)
+        # self.F[indices] += 1
+        # self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
+        # self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.min(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], self.max_visits)
+        
+
 
     def pos_to_index(self,pos):
         x = np.clip((pos[0] + self.bounding_size) // self.chunk_xz_size, 0, self.F_shape[0]-1)

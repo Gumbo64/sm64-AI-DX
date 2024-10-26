@@ -595,17 +595,23 @@ void sample_sphere_surface(Vec3f point, f32 new_len) {
     point[2] *= scale;
 }
 
-void raycast_with_normal(Vec3f hitpos, Vec3f normal, Vec3f start, Vec3f dir) {
+bool raycast_with_normal(Vec3f hitpos, Vec3f normal, Vec3f start, Vec3f dir) {
     struct Surface *surf = NULL;
     find_surface_on_ray(start, dir, &surf, hitpos, 3.0f);
-    if (surf == NULL) {
+
+    
+    if (surf == NULL || hitpos[1] <= -6000) {
         normal[0] = 0;
         normal[1] = 0;
         normal[2] = 0;
+        return false;
     } else {
+        // printf("surface type: %d\n", surf->type);
+
         normal[0] = surf->normal.x;
         normal[1] = surf->normal.y;
         normal[2] = surf->normal.z;
+        return true;
     }
 }
 
@@ -613,7 +619,9 @@ void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount
                                 f32 maxRayLength, f32 cameraDirBiasFactor) {
 
     Vec3f start;
-    vec3f_copy(start, gCamera->pos);
+    // vec3f_copy(start, gCamera->pos);
+    vec3f_copy(start, gMarioStates[0].pos);
+    start[1] += 200.0f;
     
     Vec3f velBias;
     vec3f_copy(velBias, gCamera->focus);
@@ -624,20 +632,30 @@ void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount
     velBias[2] *= cameraDirBiasFactor;
 
     for (int i = 0; i < amount; i++) {
-        if (i == amount / 2) {
-            // sample half of the rays from the player, half from camera
-            vec3f_copy(start, gMarioStates[0].pos);
-            start[1] += 200.0f;
-        }
+        // if (i == amount / 2) {
+        //     // sample half of the rays from the player, half from camera
+        //     vec3f_copy(start, gMarioStates[0].pos);
+        //     start[1] += 200.0f;
+        // }
+
+        // take raycasts from a range of starting points
+        start[1] += 400.0f / amount;
 
         Vec3f dir;
-        sample_sphere_surface(dir, 1);
+        Vec3f temp_hitpos;
+        while (true) {
+            sample_sphere_surface(dir, 1);
 
-        vec3f_add(dir, velBias);
-        dir[0] *= maxRayLength;
-        dir[1] *= maxRayLength;
-        dir[2] *= maxRayLength;
-        
-        raycast_with_normal(hitpos_arr[i], normal_arr[i], start, dir);
+            vec3f_add(dir, velBias);
+            dir[0] *= maxRayLength;
+            dir[1] *= maxRayLength;
+            dir[2] *= maxRayLength;
+            
+            
+            if (raycast_with_normal(hitpos_arr[i], normal_arr[i], start, dir)) {
+                break;
+            }
+        }
+
     }
 }

@@ -26,7 +26,7 @@ clear_sm64_exes()
 n_envs = 16
 steps_per_iter = 1200
 ppo_epochs = 4
-mini_batch_size = 1024 # fills ~15GB of VRAM
+mini_batch_size = 512 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
 
@@ -38,7 +38,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.num_inputs = 13
+        self.num_inputs = 8
         self.token_size = 128
         self.num_outputs = 5
 
@@ -47,19 +47,20 @@ class Agent(nn.Module):
             nn.Tanh(),
         )
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=8, dim_feedforward=512, batch_first=True)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=8, dim_feedforward=1024, batch_first=True)
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=6)
         
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(self.token_size, 128)),
+            layer_init(nn.Linear(self.token_size, 1024)),
             nn.Tanh(),
-            layer_init(nn.Linear(128, 1), std=1.0),
+            layer_init(nn.Linear(1024, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(self.token_size, 128)),
+            layer_init(nn.Linear(self.token_size, 2048)),
             nn.Tanh(),
+            layer_init(nn.Linear(2048, 1024)),
             # layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
-            layer_init(nn.Linear(128, self.num_outputs)),
+            layer_init(nn.Linear(1024, self.num_outputs)),
             nn.Tanh(),
         )
         self.actor_log_std = nn.Parameter(torch.zeros(1, self.num_outputs))
@@ -88,8 +89,8 @@ class Agent(nn.Module):
 
 def make_env(i):
     def mkenv():
-        return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        # return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i)
+        # return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
+        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
@@ -161,10 +162,11 @@ agent = Agent().to(device)
 # agent.load_state_dict(torch.load("ppo_1728480135.3339143_40.pth"))
 # agent.load_state_dict(torch.load("ppo_1728913197.2295485_140.pth"))
 # agent.load_state_dict(torch.load("ppo_1729008391.1956275_270.pth"))
+# agent.load_state_dict(torch.load("models/ppo_1729601912.8423085_580.pth"))
 
 # agent.actor_log_std.data.fill_(0)
 
-optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
+optimizer = optim.Adam(agent.parameters(), lr=3e-5, weight_decay=1e-5)
 
 run_name = f"ppo_{time.time()}"
 wandb.init(
@@ -198,6 +200,7 @@ with tqdm.tqdm() as iterbar:
         entropy = 0
 
         obs, info = envs.reset()
+
         for _ in tqdm.tqdm(range(steps_per_iter), leave=False):
             # print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserved(0),torch.cuda.memory_allocated(0))
 
@@ -205,7 +208,7 @@ with tqdm.tqdm() as iterbar:
             with torch.no_grad():
                 torchObs = torchify_obs(obs, device)
                 dist, value = agent.forward(torchObs)
-
+            # print(torchObs[0].shape)
             # Step
             action_raw = dist.sample()
             stick_actions = clamp_stick(action_raw[:, 0:2] * 80).cpu()

@@ -1,9 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import pickle
 import time
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d', computed_zorder=False)
+
+import time
+def mypause(interval):
+    manager = plt._pylab_helpers.Gcf.get_active()
+    if manager is not None:
+        canvas = manager.canvas
+        if canvas.figure.stale:
+            canvas.draw_idle()        
+        #plt.show(block=False)
+        canvas.start_event_loop(interval)
+    else:
+        time.sleep(interval)
 
 
 def visualise_game(marioStates, points_array, normals_array):
@@ -26,7 +40,7 @@ def visualise_game(marioStates, points_array, normals_array):
     ax.set_zlim([-8192,8192])
     # Show the plot
     plt.draw()
-    plt.pause(0.001)
+    # plt.pause(0.001)
     ax.clear()
 
 def visualise_game_tokens(tokens, pause_time=0.1):
@@ -37,30 +51,18 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     # vel_scaler = 50
 
 
-    main_player_indice = np.where(tokens[:, 0] == 1)
-    player_token_indices = np.where(tokens[:, 1] == 1)
-    point_token_indices = np.where(tokens[:, 2] == 1)
-
-    main_player_tokens = tokens[main_player_indice]
-
-    line_start = main_player_tokens[:, 3:6]
-    line_end = line_start + main_player_tokens[:, 9:12] * 0.1
-    for i in range(len(line_start)):
-        ax.plot([-line_start[i, 0], -line_end[i, 0]], [line_start[i, 2], line_end[i, 2]], [line_start[i, 1], line_end[i, 1],], c='red', zorder=12)
-
+    mario_token = tokens[0]
     
-    # main_player_tokens[:, 3:6] *= pos_scaler
-    # main_player_tokens[:, 6:9] *= vel_scaler
-    ax.scatter(-main_player_tokens[:, 3], main_player_tokens[:, 5], main_player_tokens[:, 4], c='red', marker='o', s=10, zorder=11)
+    ax.scatter(-mario_token[0], mario_token[2], mario_token[1], c='red', marker='o', s=10, zorder=11)
 
-    player_tokens = tokens[player_token_indices]
-    # player_tokens[:, 3:6] *= pos_scaler
-    # player_tokens[:, 6:9] *= vel_scaler
-    ax.scatter(-player_tokens[:, 3], player_tokens[:, 5], player_tokens[:, 4], c='blue', marker='o', s=10, zorder = 11)
-    
-    point_tokens = tokens[point_token_indices]
+
+    point_tokens = tokens[1:]
     # point_tokens[:, 3:6] *= pos_scaler
-    ax.scatter(-point_tokens[:, 3], point_tokens[:, 5], point_tokens[:, 4], c=(point_tokens[:, 6:9] + 1)/2, marker='o', s=10, zorder=10)
+    # print(point_tokens[:, 3:6])
+    normalised_colours = point_tokens[:, 3:6] * 0.9999
+    # print(normalised_colours)
+    ax.scatter(-point_tokens[:, 0], point_tokens[:, 2], point_tokens[:, 1], c=(normalised_colours + 1)/2, marker='o', s=10, zorder=10)
+    # ax.scatter(-point_tokens[:, 0], point_tokens[:, 2], point_tokens[:, 1], c="blue", marker='o', s=10, zorder=10)
 
     ax.set_xlabel('X')
     ax.set_ylabel('Z')
@@ -68,6 +70,9 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     ax.set_title('Mario 64 Point Cloud')
 
     # Set the axis limits to fit the data
+    ax.set_xlim([-1,1])
+    ax.set_ylim([-1,1])
+    ax.set_zlim([-1,1])
     # ax.set_xlim([-8192,8192])
     # ax.set_ylim([-8192,8192])
     # ax.set_zlim([-8192,8192])
@@ -75,8 +80,12 @@ def visualise_game_tokens(tokens, pause_time=0.1):
     if pause_time == 0:
         plt.show()
     # else:
+    ax.view_init(elev=90, azim=-90)
     plt.draw()
-    plt.pause(pause_time)
+    # plt.pause(pause_time)
+    # fig.canvas.draw_idle()
+    # fig.canvas.start_event_loop(pause_time)
+    plt.savefig('game.png')
     ax.clear()
     # plt.show()
 
