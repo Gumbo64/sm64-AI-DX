@@ -23,10 +23,12 @@ import math
 
 clear_sm64_exes()
 
-n_envs = 16
+n_envs = 15
 steps_per_iter = 1200
 ppo_epochs = 4
-mini_batch_size = 512 # fills ~15GB of VRAM
+
+mini_batch_size = 256 
+
 iter_per_log = 1
 iter_per_save = 10
 
@@ -39,7 +41,7 @@ class Agent(nn.Module):
     def __init__(self):
         super().__init__()
         self.num_inputs = 8
-        self.token_size = 128
+        self.token_size = 512
         self.num_outputs = 5
 
         self.preprocess = nn.Sequential(
@@ -47,8 +49,8 @@ class Agent(nn.Module):
             nn.Tanh(),
         )
 
-        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=8, dim_feedforward=1024, batch_first=True)
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=6)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=8, dim_feedforward=2048, batch_first=True)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=12)
         
         self.critic = nn.Sequential(
             layer_init(nn.Linear(self.token_size, 1024)),
@@ -166,7 +168,7 @@ agent = Agent().to(device)
 
 # agent.actor_log_std.data.fill_(0)
 
-optimizer = optim.Adam(agent.parameters(), lr=3e-5, weight_decay=1e-5)
+optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
 run_name = f"ppo_{time.time()}"
 wandb.init(

@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=10000, num_points=1000, fps_amount=100, soft_reset=False,
+    def __init__(self, multi_step=4, max_visits=10000, num_points=100, fps_amount=1000, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -101,6 +101,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
         if self.fps_amount < len(point_tokens):
             point_tokens = point_tokens[fpsample.fps_sampling(point_tokens[:, 0:3], self.fps_amount)]
 
+        # self.avg_visits = 0.9 * self.avg_visits + 0.1 * np.mean(point_tokens[:, 7]) # Rewards are at index 7
         self.avg_visits = np.mean(point_tokens[:, 7]) # Rewards are at index 7
         self.curiosity.add_circles(point_tokens[:, 0:3]) # Curiosity update for each point
 
@@ -147,6 +148,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
         return reward 
 
     def reset(self):
+        self.avg_visits = 0
         self.game.set_controller(buttonL=1)
         self.game.step_game()
         if self.soft_reset:
