@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=10000, num_points=100, fps_amount=1000, soft_reset=False,
+    def __init__(self, multi_step=4, max_visits=2000, num_points=1000, fps_amount=100, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -29,13 +29,14 @@ class SM64_ENV_CURIOSITY(gym.Env):
                 # Normal / Velocity
                 # One-Hot encoding: (Self-Mario=1 / Point=0)
                 # Visits at the given position
-            spaces.Box(low=-1, high=1, shape=(7,), dtype=np.float32)
+            spaces.Box(low=-1, high=1, shape=(8,), dtype=np.float32)
         )
         self.multi_step = multi_step
         self.max_visits = max_visits
         self.num_points = num_points
         self.max_ray_length = max_ray_length
         self.fps_amount = fps_amount if fps_amount is not None else num_points
+        assert self.fps_amount <= self.num_points
         self.soft_reset = soft_reset
 
         self.my_pos = np.array([0,0,0])
@@ -43,14 +44,16 @@ class SM64_ENV_CURIOSITY(gym.Env):
         self.my_angle = 0
         self.avg_visits = 0
 
+        self.vel_reward = 0
+        self.curiosity_reward = 0
+
     def step(self, action):
         stick, buttons = action
         
         stickX, stickY = stick
-        buttonA, buttonB, buttonZ = buttons
+        buttonA, buttonB, buttonZ = [b > 0 for b in buttons]
         
-        stickAngle = np.atan2(stickY, stickX) + math.pi
-
+        stickAngle = np.arctan2(stickY, stickX) + math.pi
         # lakituAngle = self.game.get_lakitu_yaw() * np.pi / 0x8000 # convert from sm64 units
         
         newAngle = stickAngle + self.my_angle
@@ -65,7 +68,11 @@ class SM64_ENV_CURIOSITY(gym.Env):
         reward = self.calculate_reward(obs)
         done = False
         truncated = False
-        info = {}
+        info = {
+            "curiosity_reward": self.curiosity_reward,
+            "vel_reward": self.vel_reward,
+            "avg_visits": self.avg_visits
+        }
 
 
         return obs, reward, done, truncated, info
@@ -103,6 +110,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
         # self.avg_visits = 0.9 * self.avg_visits + 0.1 * np.mean(point_tokens[:, 7]) # Rewards are at index 7
         self.avg_visits = np.mean(point_tokens[:, 7]) # Rewards are at index 7
+        # print(self.avg_visits)
         self.curiosity.add_circles(point_tokens[:, 0:3]) # Curiosity update for each point
 
         player_tokens[:, 3:6] /= 50 # Normalize velocity for players (not point normals though)
@@ -140,9 +148,12 @@ class SM64_ENV_CURIOSITY(gym.Env):
         # my_visits = self.curiosity.get_sphere_visits(self.my_pos)
         
         # curiosity_reward = (1 - my_visits / self.max_visits)
-        curiosity_reward = math.exp(-4 * my_visits / self.max_visits)
-        vel_reward = math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50
-        reward = 0.9 * curiosity_reward + 0.1 * vel_reward
+
+
+        
+        self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
+        self.vel_reward = np.clip(math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50, 0, 1)
+        reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
         # reward = 0.5 * curiosity_reward + 0.5 * vel_reward
         # reward = 0.75 * curiosity_reward + 0.25 * vel_reward
         return reward 

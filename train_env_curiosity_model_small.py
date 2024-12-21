@@ -23,10 +23,10 @@ import math
 
 clear_sm64_exes()
 
-n_envs = 16
-steps_per_iter = 1200
-ppo_epochs = 4
-mini_batch_size = 1024 # fills ~15GB of VRAM
+n_envs = 15
+steps_per_iter = 1600
+ppo_epochs = 10
+mini_batch_size = 4096 # fills ~15GB of VRAM
 iter_per_log = 1
 iter_per_save = 10
 
@@ -38,7 +38,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.num_inputs = 13
+        self.num_inputs = 8
         self.token_size = 128
         self.num_outputs = 5
 
@@ -88,8 +88,8 @@ class Agent(nn.Module):
 
 def make_env(i):
     def mkenv():
-        return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        # return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i)
+        # return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
+        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=True)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
@@ -164,12 +164,12 @@ agent = Agent().to(device)
 # agent.load_state_dict(torch.load("ppo_1728754329.291212_340.pth"))
 # agent.load_state_dict(torch.load("ppo_1728804252.0307822_160.pth"))
 # agent.load_state_dict(torch.load("ppo_1728814183.1124492_110.pth"))
-agent.load_state_dict(torch.load("ppo_1728877177.6916175_150.pth"))
+# agent.load_state_dict(torch.load("ppo_1728877177.6916175_150.pth"))
 # agent.actor_log_std.data.fill_(0)
 
 optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
-run_name = f"ppo_{time.time()}"
+run_name = f"small_ppo_{time.time()}"
 wandb.init(
     project="sm64env",
     sync_tensorboard=True,
