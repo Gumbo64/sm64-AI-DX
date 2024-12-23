@@ -109,7 +109,16 @@ class SM64_ENV_CURIOSITY(gym.Env):
             point_tokens = point_tokens[fpsample.fps_sampling(point_tokens[:, 0:3], self.fps_amount)]
 
         # self.avg_visits = 0.9 * self.avg_visits + 0.1 * np.mean(point_tokens[:, 7]) # Rewards are at index 7
-        self.avg_visits = np.mean(point_tokens[:, 7]) # Rewards are at index 7
+        # self.avg_visits = np.mean(point_tokens[:, 7]) # Rewards are at index 7
+
+        
+        # distances = np.linalg.norm(point_tokens[:, 0:3] - self.my_pos, axis=1) / self.max_ray_length
+        # # distances_square = distances ** 2
+        # self.visits_reward = np.mean((point_tokens[:, 7]/self.max_visits) * distances)
+
+        self.visits = point_tokens[:, 7]
+        self.distances = np.linalg.norm(point_tokens[:, 0:3] - self.my_pos, axis=1)
+
         # print(self.avg_visits)
         self.curiosity.add_circles(point_tokens[:, 0:3]) # Curiosity update for each point
 
@@ -143,7 +152,12 @@ class SM64_ENV_CURIOSITY(gym.Env):
         if len(self.my_pos) == 0:
             return 0
 
-        my_visits = self.avg_visits
+        # distances_inverse = 1 / (self.distances**2 + 1e-8)
+        # self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits) * distances_inverse
+        self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits)
+        self.curiosity_reward = np.clip(np.mean(self.curiosity_reward), 0, 1)
+
+        # my_visits = self.avg_visits
         # my_visits = self.curiosity.get_visits(self.my_pos)
         # my_visits = self.curiosity.get_sphere_visits(self.my_pos)
         
@@ -151,7 +165,8 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
 
         
-        self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
+        # self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
+        # self.curiosity_reward = np.clip(math.exp(- 10 * self.visits_reward), 0, 1)
         self.vel_reward = np.clip(math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50, 0, 1)
         reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
         # reward = 0.5 * curiosity_reward + 0.5 * vel_reward

@@ -77,7 +77,7 @@ coop_player_palette_cap ff 00 00
 coop_player_palette_emblem ff 00 00
 amount_of_players 16
 bubble_death true
-coop_host_port 7783
+coop_host_port 7788
 coop_host_save_slot 1
 coop_join_ip localhost
 coop_join_port 7777
