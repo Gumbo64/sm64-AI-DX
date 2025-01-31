@@ -10,7 +10,7 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, max_visits=2000, num_points=1000, fps_amount=100, soft_reset=False,
+    def __init__(self, multi_step=4, max_visits=500, num_points=1000, fps_amount=100, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
         self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
@@ -167,9 +167,12 @@ class SM64_ENV_CURIOSITY(gym.Env):
         
         # self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
         # self.curiosity_reward = np.clip(math.exp(- 10 * self.visits_reward), 0, 1)
+
         self.vel_reward = np.clip(math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50, 0, 1)
+        # self.vel_reward = np.clip(np.linalg.norm(self.my_vel) / 50, 0, 1)
+        
         reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
-        # reward = 0.5 * curiosity_reward + 0.5 * vel_reward
+        # reward = 0.5 * self.curiosity_reward + 0.5 * self.vel_reward
         # reward = 0.75 * curiosity_reward + 0.25 * vel_reward
         return reward 
 

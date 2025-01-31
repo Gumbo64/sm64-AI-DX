@@ -165,6 +165,7 @@ agent = Agent().to(device)
 # agent.load_state_dict(torch.load("ppo_1728804252.0307822_160.pth"))
 # agent.load_state_dict(torch.load("ppo_1728814183.1124492_110.pth"))
 # agent.load_state_dict(torch.load("ppo_1728877177.6916175_150.pth"))
+# agent.load_state_dict(torch.load("models/small_ppo_1734886878.8964658_1100.pth"))
 # agent.actor_log_std.data.fill_(0)
 
 optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)

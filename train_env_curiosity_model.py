@@ -1,5 +1,5 @@
 import gym.vector
-import gymnasium
+import gym.vector
 from sm64env.sm64env_curiosity import SM64_ENV_CURIOSITY
 from sm64env.load_sm64_CDLL import clear_sm64_exes
 from visualiser import visualise_game_tokens, visualise_curiosity
@@ -20,12 +20,11 @@ import tqdm
 import os
 import math
 # os.environ["WANDB_SILENT"] = "true"
-from stable_baselines3.common.running_mean_std import RunningMeanStd
 
 clear_sm64_exes()
 
-n_envs = 1
-steps_per_iter = 1024
+n_envs = 15
+steps_per_iter = 1600
 ppo_epochs = 4
 
 mini_batch_size = 256
@@ -74,13 +73,10 @@ class Agent(nn.Module):
 
         x = self.preprocess(tensor_array_of_obs)
         # print(x.shape)
-
-
-        # DOES THIS MIX BATCHES WITH EACH OTHER?????
         x = self.transformer(x)
         # print(x.shape)
         # xs = x.mean(dim=1)
-        # First token is always the self player token
+        # First token is always the self player token ( (1,0,0) one-hot encoded )
         # This will act like a <cls> token
         # Learn to output to 1 token instead of many. Should be way easier to learn
         xs = x[:, 0, :]
@@ -96,10 +92,7 @@ class Agent(nn.Module):
 def make_env(i):
     def mkenv():
         # return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        env = SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=False)
-
-        # env = gymnasium.wrappers.NormalizeReward(env)
-        return env
+        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=True)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
@@ -116,8 +109,6 @@ def ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, 
             # already torchified
             dist, value = agent.forward(obs)
             entropy = dist.entropy().mean()
-
-            # ALSO HERE MAYBE I SHOULD DO THE .SUM(1).UNSQUEEZE(1) THING AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa
             new_log_probs = dist.log_prob(action)
 
             ratio = (new_log_probs - old_log_probs).exp()
@@ -127,8 +118,7 @@ def ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, 
             actor_loss  = - torch.min(surr1, surr2).mean()
             critic_loss = (return_ - value).pow(2).mean()
 
-            # loss = 0.5 * critic_loss + actor_loss - 0.001 * entropy
-            loss = 0.5 * critic_loss + actor_loss
+            loss = 0.5 * critic_loss + actor_loss - 0.001 * entropy
 
             optimizer.zero_grad()
             loss.backward()
@@ -149,7 +139,7 @@ def torchify_obs(obs, device):
     torchObs = []
     for x in obs:
         torchObs.append(torch.tensor(x, dtype=torch.float32).to(device))
-    return nn.utils.rnn.pad_sequence(torchObs, batch_first=True, padding_value=0)
+    return torchObs
 
 def cat_and_detach_obs(obs_s):
     new_obs_s = []
@@ -171,13 +161,19 @@ def clamp_stick(tensor_vec):
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 agent = Agent().to(device)
 
-# agent.load_state_dict(torch.load("models/ppo_1734008981.6722362_130.pth"))
+# agent.load_state_dict(torch.load("ppo_1728480135.3339143_40.pth"))
+# agent.load_state_dict(torch.load("ppo_1728480135.3339143_220.pth"))
+# agent.load_state_dict(torch.load("ppo_1728491932.1914167_3090.pth"))
+# agent.load_state_dict(torch.load("ppo_1728754329.291212_340.pth"))
+# agent.load_state_dict(torch.load("ppo_1728804252.0307822_160.pth"))
+# agent.load_state_dict(torch.load("ppo_1728814183.1124492_110.pth"))
+# agent.load_state_dict(torch.load("ppo_1728877177.6916175_150.pth"))
+# agent.load_state_dict(torch.load("models/small_ppo_1734886878.8964658_1100.pth"))
 # agent.actor_log_std.data.fill_(0)
 
-# optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-5)
-optimizer = optim.Adam(agent.parameters(), lr=3e-4)
+optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 
-run_name = f"ppo_{time.time()}"
+run_name = f"small_ppo_{time.time()}"
 wandb.init(
     project="sm64env",
     sync_tensorboard=True,
@@ -196,12 +192,6 @@ envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_me
 # envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
 
 
-# add this to agent
-std_epsilon = 1e-8
-player_running_mean_std = RunningMeanStd(shape=(8,))
-point_running_mean_std  = RunningMeanStd(shape=(8,))
-reward_running_mean_std = RunningMeanStd(shape=(1,))
-
 last_log_time = time.time()
 iter = 1
 with tqdm.tqdm() as iterbar:
@@ -214,12 +204,7 @@ with tqdm.tqdm() as iterbar:
         masks     = []
         entropy = 0
 
-        curiosity_reward = 0
-        vel_reward = 0
-
-
         obs, info = envs.reset()
-
         for _ in tqdm.tqdm(range(steps_per_iter), leave=False):
             # print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserved(0),torch.cuda.memory_allocated(0))
 
@@ -227,7 +212,7 @@ with tqdm.tqdm() as iterbar:
             with torch.no_grad():
                 torchObs = torchify_obs(obs, device)
                 dist, value = agent.forward(torchObs)
-            # print(torchObs[0].shape)
+
             # Step
             action_raw = dist.sample()
             stick_actions = clamp_stick(action_raw[:, 0:2] * 80).cpu()
@@ -237,33 +222,8 @@ with tqdm.tqdm() as iterbar:
             next_obs, reward, done, truncated, info =  envs.step(action)
 
             # Calculate storage stuff
-
-            # running mean/stds for normalisation
-
-
-            player_running_mean_std.update(torchObs[:, 0, :].cpu().numpy())
-            point_running_mean_std.update(torch.flatten(torchObs[:, 1:, :], end_dim=1).cpu().numpy())
-
-            torchObs[:, 0, :] = (torchObs[:, 0, :].cpu() - player_running_mean_std.mean) / np.sqrt(std_epsilon + player_running_mean_std.var)
-            torchObs[:, 1:, :] = (torchObs[:, 1:, :].cpu() - point_running_mean_std.mean) / np.sqrt(std_epsilon + point_running_mean_std.var)
-
-            reward_running_mean_std.update(reward)
-            reward = (reward - reward_running_mean_std.mean) / np.sqrt(std_epsilon + reward_running_mean_std.var)
-            # print("--------------------------")
-            # print(torchObs.shape)
-            # print(torchObs[:, 0, :].shape)
-            # print(torch.flatten(torchObs[:, 1:, :], end_dim=1).shape)
-
-            # print(torchObs[0, :5, :])
-            # DO I ADD THE .SUM().UNSQUEEZE(1) HERE? I DUNNO MAN AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-
             log_prob = dist.log_prob(action_raw)
             entropy += dist.entropy().mean()
-            # log_prob = dist.log_prob(action_raw).sum(1).unsqueeze(1)
-            # entropy += dist.entropy().sum(1).unsqueeze(1)
-
-            curiosity_reward += info["curiosity_reward"].mean()
-            vel_reward += info["vel_reward"].mean()
 
             # Storage
             log_probs.append(log_prob)
@@ -289,20 +249,9 @@ with tqdm.tqdm() as iterbar:
         returns = torch.cat(returns).detach()
         log_probs = torch.cat(log_probs).detach()
         values    = torch.cat(values).detach()
-
-        # nn.utils.rnn.pad_sequence
         obs_s = cat_and_detach_obs(obs_s)
-        
         actions   = torch.cat(actions)
         advantages = returns - values
-
-        # print("returns_shape", returns.shape)
-        # print("log_probs_shape", log_probs.shape)
-        # print("values_shape", values.shape)
-        # print("obs_s_shape", len(obs_s), obs_s[0].shape)
-        # print("actions_shape", actions.shape)
-        # print("advantages_shape", advantages.shape)
-
 
         ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, advantages)
 
@@ -315,18 +264,11 @@ with tqdm.tqdm() as iterbar:
             rewards = torch.cat(rewards).detach()
 
             step_count = iter * steps_per_iter * n_envs
-            writer.add_scalar("Entropy", entropy.mean(), step_count)
+            writer.add_scalar("Entropy", entropy, step_count)
             writer.add_scalar("Advantage", advantages.mean(), step_count)
             writer.add_scalar("Value", values.mean(), step_count)
             writer.add_scalar("Return", returns.mean(), step_count)
-
-            rew = rewards.mean().cpu() * np.sqrt(std_epsilon + reward_running_mean_std.var) + reward_running_mean_std.mean
-            writer.add_scalar("Average reward", rew, step_count)
-            writer.add_scalar("Reward var", reward_running_mean_std.var, step_count)
-            writer.add_scalar("Reward mean", reward_running_mean_std.mean, step_count)
-
-            writer.add_scalar("Curiosity reward", curiosity_reward / steps_per_iter, step_count)
-            writer.add_scalar("Vel reward", vel_reward / steps_per_iter, step_count)
+            writer.add_scalar("Average reward", rewards.mean(), step_count)
             writer.add_scalar("SPS", iter_per_log * steps_per_iter * n_envs / (time.time() - last_log_time), step_count)
             last_log_time = time.time()
         # envs.close()

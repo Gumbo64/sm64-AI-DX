@@ -4,7 +4,7 @@ class CURIOSITY:
     def __init__(self, max_visits=1000):
         self.max_visits = max_visits
         self.chunk_xz_size = 40
-
+        self.visit_decay = 0.8
         self.chunk_y_size = 100
         # self.chunk_y_size = 200
         
@@ -21,7 +21,7 @@ class CURIOSITY:
         self.F = np.zeros(shape=self.F_shape, dtype=float)
     
     def soft_reset(self):
-        self.F = self.F / 2
+        self.F = self.F * self.visit_decay
 
     def create_ellipsoid_tensor(self, shape_sphere):
         a, b, c = shape_sphere
