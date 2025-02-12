@@ -579,6 +579,9 @@ int global_index_to_local(int index) {
 // f32* = Vec3f
 #include "engine/surface_collision.h" // for find_surface_on_ray to work
 #include "game/camera.h" // for gCamera
+#include "gfx/gfx_pc.h"
+
+
 
 void sample_sphere_surface(Vec3f point, f32 new_len) {
     f32 len = 2.0;
@@ -642,7 +645,6 @@ void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount
         start[1] += 400.0f / amount;
 
         Vec3f dir;
-        Vec3f temp_hitpos;
         while (true) {
             sample_sphere_surface(dir, 1);
 

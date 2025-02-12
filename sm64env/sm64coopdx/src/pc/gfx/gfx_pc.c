@@ -128,7 +128,7 @@ static struct RSP {
 
 #define RDP_TILES 2
 
-static struct RDP {
+struct RDP {
     const uint8_t *palette;
     struct {
         const uint8_t *addr;
@@ -2135,4 +2135,30 @@ void OPTIMIZE_O3 ext_gfx_run_dl(Gfx* cmd) {
             djui_gfx_dp_execute_djui(cmd->words.w1);
             break;
     }
+}
+
+void get_pixels_size(int* width, int* height) {
+    *width = rdp.viewport.width;
+    *height = rdp.viewport.height;
+}
+
+struct Pixels {
+    int pixelsWidth;
+    int pixelsHeight;
+    unsigned char* pixels;
+};
+
+struct Pixels sPixels = {0};
+
+struct Pixels *get_pixels() {
+    if (sPixels.pixels == NULL) {
+        sPixels.pixels = malloc(rdp.viewport.width * rdp.viewport.height * 4);
+    } else {
+        sPixels.pixels = realloc(sPixels.pixels, rdp.viewport.width * rdp.viewport.height * 4);
+    }
+    sPixels.pixelsWidth = rdp.viewport.width;
+    sPixels.pixelsHeight = rdp.viewport.height;
+
+    gfx_rapi->get_pixels(rdp.viewport.width, rdp.viewport.height, sPixels.pixels);
+    return &sPixels;
 }

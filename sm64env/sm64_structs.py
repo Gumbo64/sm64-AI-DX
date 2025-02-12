@@ -276,3 +276,14 @@ class NetworkPlayer(ctypes.Structure):
         ("overridePaletteIndexLp", ctypes.c_ubyte),
     ]
     
+# struct Pixels {
+#     int pixelsWidth;
+#     int pixelsHeight;
+#     unsigned char* pixels;
+# };
+class Pixels (ctypes.Structure):
+    _fields_ = [
+        ("pixelsWidth", ctypes.c_int),
+        ("pixelsHeight", ctypes.c_int),
+        ("pixels", ctypes.POINTER(ctypes.c_ubyte))
+    ]

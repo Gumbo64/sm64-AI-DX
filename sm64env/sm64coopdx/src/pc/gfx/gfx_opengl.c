@@ -734,6 +734,12 @@ static void gfx_opengl_finish_render(void) {
 static void gfx_opengl_shutdown(void) {
 }
 
+static void gfx_opengl_get_pixels(int width, int height, unsigned char* pixels){
+    // pixels should be size of width * height * 3
+    
+    glReadPixels((width) % 4, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+} 
+
 struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_z_is_from_0_to_1,
     gfx_opengl_unload_shader,
@@ -757,7 +763,8 @@ struct GfxRenderingAPI gfx_opengl_api = {
     gfx_opengl_start_frame,
     gfx_opengl_end_frame,
     gfx_opengl_finish_render,
-    gfx_opengl_shutdown
+    gfx_opengl_shutdown,
+    gfx_opengl_get_pixels
 };
 
 #endif // RAPI_GL

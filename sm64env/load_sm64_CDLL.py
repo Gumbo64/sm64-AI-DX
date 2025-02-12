@@ -2,7 +2,7 @@ import ctypes
 import os
 import inspect
 import shutil
-from .sm64_structs import MarioState, NetworkPlayer
+from .sm64_structs import MarioState, NetworkPlayer, Pixels
 import numpy as np
 
 curr_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -23,7 +23,7 @@ class SM64_GAME:
         base_sm64_exe_path = os.path.join(build_dir, "sm64coopdx")
         self.sm64_exe_path = os.path.join(build_dir, f"sm64coopdx_{str(id(self))}")
         shutil.copyfile(base_sm64_exe_path, self.sm64_exe_path)
-
+        self.i = 10000
 
         self.sm64_CDLL = ctypes.CDLL(self.sm64_exe_path, mode=ctypes.RTLD_LOCAL)
 
@@ -49,6 +49,15 @@ class SM64_GAME:
 
         self.sm64_CDLL.raycast_sphere_with_normal.argtypes = [ctypes.POINTER(Vec3f), ctypes.POINTER(Vec3f), ctypes.c_int, ctypes.c_float, ctypes.c_float]
         self.sm64_CDLL.raycast_sphere_with_normal.restype = None
+
+        self.sm64_CDLL.get_pixels_size.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
+        self.sm64_CDLL.get_pixels_size.restype = None
+
+        # self.sm64_CDLL.get_pixels.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_ubyte)]
+        # self.sm64_CDLL.get_pixels.restype = None
+        
+        self.sm64_CDLL.get_pixels.argtypes = []
+        self.sm64_CDLL.get_pixels.restype = ctypes.POINTER(Pixels)
 
         self.sm64_CDLL.get_lakitu_pos.argtypes = []
         self.sm64_CDLL.get_lakitu_pos.restype = ctypes.POINTER(Vec3f)
@@ -137,6 +146,33 @@ class SM64_GAME:
         ctypes_normal_arr = (Vec3f * amount)()
         self.sm64_CDLL.raycast_sphere_with_normal(ctypes_hitpos_arr, ctypes_normal_arr, amount, maxRayLength, cameraDirBiasFactor)
         return np.array(ctypes_hitpos_arr), np.array(ctypes_normal_arr)
+
+    def get_pixels(self):
+        # w = ctypes.c_int()
+        # h = ctypes.c_int()
+        # self.sm64_CDLL.get_pixels_size(ctypes.byref(w), ctypes.byref(h))
+        # s = (w.value ) * (h.value) * 3
+        # print(w, h, s, self.i)
+
+        # pixels = (ctypes.c_ubyte * s)()
+        ctypes_pixels = self.sm64_CDLL.get_pixels().contents
+
+        w = ctypes_pixels.pixelsWidth
+        h = ctypes_pixels.pixelsHeight
+
+        # claude stopped weird padding misalignment
+        row_bytes = w * 3
+        padding = (4 - (row_bytes % 4)) % 4
+        stride = row_bytes + padding
+        img = np.ctypeslib.as_array(ctypes_pixels.pixels, shape=(h * stride,))
+        idx = np.arange(h * row_bytes) + (np.arange(h) * padding).repeat(row_bytes)
+
+        img = img[idx].reshape((h, w, 3))[:, :-padding, :]
+
+        # flip image (cosmetic for human viewing, AI doesnt care)
+        img = np.flipud(img).astype(np.uint8)
+        
+        return img
 
     def get_lakitu_pos(self):
         return np.array(self.sm64_CDLL.get_lakitu_pos().contents)
