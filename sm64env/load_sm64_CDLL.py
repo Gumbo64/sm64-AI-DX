@@ -23,7 +23,6 @@ class SM64_GAME:
         base_sm64_exe_path = os.path.join(build_dir, "sm64coopdx")
         self.sm64_exe_path = os.path.join(build_dir, f"sm64coopdx_{str(id(self))}")
         shutil.copyfile(base_sm64_exe_path, self.sm64_exe_path)
-        self.i = 10000
 
         self.sm64_CDLL = ctypes.CDLL(self.sm64_exe_path, mode=ctypes.RTLD_LOCAL)
 
@@ -49,12 +48,6 @@ class SM64_GAME:
 
         self.sm64_CDLL.raycast_sphere_with_normal.argtypes = [ctypes.POINTER(Vec3f), ctypes.POINTER(Vec3f), ctypes.c_int, ctypes.c_float, ctypes.c_float]
         self.sm64_CDLL.raycast_sphere_with_normal.restype = None
-
-        self.sm64_CDLL.get_pixels_size.argtypes = [ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int)]
-        self.sm64_CDLL.get_pixels_size.restype = None
-
-        # self.sm64_CDLL.get_pixels.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.POINTER(ctypes.c_ubyte)]
-        # self.sm64_CDLL.get_pixels.restype = None
         
         self.sm64_CDLL.get_pixels.argtypes = []
         self.sm64_CDLL.get_pixels.restype = ctypes.POINTER(Pixels)
@@ -148,13 +141,6 @@ class SM64_GAME:
         return np.array(ctypes_hitpos_arr), np.array(ctypes_normal_arr)
 
     def get_pixels(self):
-        # w = ctypes.c_int()
-        # h = ctypes.c_int()
-        # self.sm64_CDLL.get_pixels_size(ctypes.byref(w), ctypes.byref(h))
-        # s = (w.value ) * (h.value) * 3
-        # print(w, h, s, self.i)
-
-        # pixels = (ctypes.c_ubyte * s)()
         ctypes_pixels = self.sm64_CDLL.get_pixels().contents
 
         w = ctypes_pixels.pixelsWidth
@@ -166,12 +152,11 @@ class SM64_GAME:
         stride = row_bytes + padding
         img = np.ctypeslib.as_array(ctypes_pixels.pixels, shape=(h * stride,))
         idx = np.arange(h * row_bytes) + (np.arange(h) * padding).repeat(row_bytes)
-
-        img = img[idx].reshape((h, w, 3))[:, :-padding, :]
+        img = img[idx].reshape((h, w, 3))
+        img = img if padding == 0 or w < 4 else img[:, :-padding]
 
         # flip image (cosmetic for human viewing, AI doesnt care)
         img = np.flipud(img).astype(np.uint8)
-        
         return img
 
     def get_lakitu_pos(self):

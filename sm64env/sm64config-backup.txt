@@ -1,8 +1,8 @@
 fullscreen false
-window_x 849
-window_y 772
-window_w 617
-window_h 450
+window_x 1378
+window_y 630
+window_w 256
+window_h 256
 vsync false
 msaa 0
 texture_filtering 2

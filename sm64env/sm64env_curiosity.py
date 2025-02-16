@@ -10,9 +10,10 @@ def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
 class SM64_ENV_CURIOSITY(gym.Env):
-    def __init__(self, multi_step=4, num_points=1000, fps_amount=100,
+    def __init__(self, multi_step=4, max_visits=500, num_points=1000, fps_amount=100, soft_reset=False,
                   max_ray_length=8000, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
+        self.curiosity = curiosity_util.CURIOSITY(max_visits=max_visits)
         self.action_space = spaces.Tuple((
             # StickX, StickY
             spaces.Box(low=-80, high=80, shape=(2,), dtype=np.int8),
@@ -23,21 +24,28 @@ class SM64_ENV_CURIOSITY(gym.Env):
         # A variable amount of tokens make up the observation space
         self.observation_space = spaces.Sequence(
             # Each token:
-                # P P P N N N O
+                # P P P N N N O V
                 # Position (relative)
                 # Normal / Velocity
                 # One-Hot encoding: (Self-Mario=1 / Point=0)
-            spaces.Box(low=-1, high=1, shape=(7,), dtype=np.float32)
+                # Visits at the given position
+            spaces.Box(low=-1, high=1, shape=(8,), dtype=np.float32)
         )
         self.multi_step = multi_step
+        self.max_visits = max_visits
         self.num_points = num_points
         self.max_ray_length = max_ray_length
         self.fps_amount = fps_amount if fps_amount is not None else num_points
         assert self.fps_amount <= self.num_points
+        self.soft_reset = soft_reset
 
         self.my_pos = np.array([0,0,0])
         self.my_vel = np.array([0,0,0])
         self.my_angle = 0
+        self.avg_visits = 0
+
+        self.vel_reward = 0
+        self.curiosity_reward = 0
 
     def step(self, action):
         stick, buttons = action
@@ -45,10 +53,12 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = [b > 0 for b in buttons]
         
-        stickAngle = np.arctan2(stickY, stickX) + math.pi
+        newAngle = np.arctan2(stickY, stickX)
+
+        # stickAngle = np.arctan2(stickY, stickX) + math.pi
         # lakituAngle = self.game.get_lakitu_yaw() * np.pi / 0x8000 # convert from sm64 units
-        
-        newAngle = stickAngle + self.my_angle
+        # newAngle = stickAngle + self.my_angle
+
         length = min(np.sqrt(stickX**2 + stickY**2), 80)
         stickX = length * np.cos(newAngle)
         stickY = length * np.sin(newAngle)
@@ -57,10 +67,14 @@ class SM64_ENV_CURIOSITY(gym.Env):
         self.game.step_game(num_steps=self.multi_step)
         
         obs = self.get_observation()
-        reward = 0
+        reward = self.calculate_reward(obs)
         done = False
         truncated = False
-        info = {}
+        info = {
+            "curiosity_reward": self.curiosity_reward,
+            "vel_reward": self.vel_reward,
+            "avg_visits": self.avg_visits
+        }
 
 
         return obs, reward, done, truncated, info
@@ -75,19 +89,22 @@ class SM64_ENV_CURIOSITY(gym.Env):
         pos = np.array(state.pos)
         vel = np.array(state.vel)
         one_hot = np.ones((1))
+        visits = np.array([self.curiosity.get_visits(pos)])
 
-        token = np.concatenate([pos, vel, one_hot])
+        token = np.concatenate([pos, vel, one_hot, visits])
         player_tokens = np.array([token])
 
         # POINT TOKENS
         one_hot = np.zeros((self.num_points, 1))
         pos_array, normal_array = self.game.get_raycast_sphere_with_normal(amount=self.num_points, maxRayLength=self.max_ray_length)
         
+        visits = self.curiosity.get_visits_multi(pos_array)
+
         # visits = self.curiosity.get_sphere_visits_multi(pos_array)
 
         visits = np.expand_dims(visits, axis=1)
 
-        point_tokens = np.concatenate([pos_array, normal_array, one_hot], axis=1)
+        point_tokens = np.concatenate([pos_array, normal_array, one_hot, visits], axis=1)
         # point_tokens = point_tokens[np.where(~np.all(normal_array == 0, axis=1))] # Remove zero normals, not necessary anymore
 
         if self.fps_amount < len(point_tokens):
@@ -101,6 +118,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
         # # distances_square = distances ** 2
         # self.visits_reward = np.mean((point_tokens[:, 7]/self.max_visits) * distances)
 
+        self.visits = point_tokens[:, 7]
         self.distances = np.linalg.norm(point_tokens[:, 0:3] - self.my_pos, axis=1)
 
         # print(self.avg_visits)
@@ -128,7 +146,37 @@ class SM64_ENV_CURIOSITY(gym.Env):
         tokens[:, 3:6] = np.dot(tokens[:, 3:6], rotation_matrix)
 
         tokens[:, 0:3] /= self.max_ray_length # Normalize position
+        tokens[:, 7] /= self.max_visits # Normalize visits
         return tokens
+
+    def calculate_reward(self, obs):
+        # Use my_pos to calculate reward
+        if len(self.my_pos) == 0:
+            return 0
+
+        # distances_inverse = 1 / (self.distances**2 + 1e-8)
+        # self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits) * distances_inverse
+        self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits)
+        self.curiosity_reward = np.clip(np.mean(self.curiosity_reward), 0, 1)
+
+        # my_visits = self.avg_visits
+        # my_visits = self.curiosity.get_visits(self.my_pos)
+        # my_visits = self.curiosity.get_sphere_visits(self.my_pos)
+        
+        # curiosity_reward = (1 - my_visits / self.max_visits)
+
+
+        
+        # self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
+        # self.curiosity_reward = np.clip(math.exp(- 10 * self.visits_reward), 0, 1)
+
+        self.vel_reward = np.clip(math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50, 0, 1)
+        # self.vel_reward = np.clip(np.linalg.norm(self.my_vel) / 50, 0, 1)
+        
+        reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
+        # reward = 0.5 * self.curiosity_reward + 0.5 * self.vel_reward
+        # reward = 0.75 * curiosity_reward + 0.25 * vel_reward
+        return reward 
 
     def reset(self):
         self.avg_visits = 0

@@ -29,19 +29,10 @@ class SM64_ENV_PIXELS(gym.Env):
         ))
                 
         # A variable amount of tokens make up the observation space
-        self.observation_space = spaces.Sequence(
-            # Each token:
-            spaces.Tuple((
-                # One-Hot encoding: (Self-Mario / Other-Mario / Point)
-                spaces.MultiBinary(3),
-                # Position
-                spaces.Box(low=-8192, high=8192, shape=(3,), dtype=np.float32),
-                # Velocity / Normal 
-                spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32),
-                # Visits
-                spaces.Discrete(1000)
-            ))
+        self.observation_space = spaces.Box(
+            low=0, high=255, shape=(256, 144), dtype=np.uint8
         )
+        
         self.multi_step = multi_step
 
     def step(self, action):

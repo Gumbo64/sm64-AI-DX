@@ -1,6 +1,7 @@
 -- name: AI mod
 -- description: poop
 local tagCompatibilityMode = false
+local lockCameraMode = true
 
 if not tagCompatibilityMode then
     gLevelValues.entryLevel = LEVEL_BOB
@@ -12,12 +13,14 @@ end
 
 local my_start_pos = {x = 0, y = 0, z = 0}
 local last_angle = 0
+local first_angle = 0
 local frameCounted = 0
 
 
 
 function on_init()
     vec3f_set(my_start_pos, gMarioStates[0].pos.x, gMarioStates[0].pos.y, gMarioStates[0].pos.z)
+    first_angle = gMarioStates[0].faceAngle.y
 
     -- set_override_fov(0.0001)
     set_override_fov(90)
@@ -25,12 +28,15 @@ function on_init()
     -- if not network_is_server() then
     --     return
     -- end
-    -- camera_freeze()
+    if lockCameraMode then
+        camera_freeze()
+    end
 end
 
 function player_respawn(m)
     -- reset most variables
     init_single_mario(m)
+    last_angle = first_angle
 
     -- spawn location/angle
     m.pos.x = my_start_pos.x
@@ -73,14 +79,24 @@ function update_mario(m)
         if (m.controller.buttonDown & L_TRIG) ~= 0 then
             player_respawn(m)
         end
-        -- set_camera(m)
-        -- Removing the relative controls
-        if m.controller.stickMag ~= 0 then
-            m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
-            local angle = atan2s(m.controller.stickX, m.controller.stickY) - gLakituState.yaw
-            m.controller.stickX = m.controller.stickMag * coss(angle)
-            m.controller.stickY = m.controller.stickMag * sins(angle)
+        if lockCameraMode then
+            set_camera(m)
+            -- adding relative controls for locked camera
+            if m.controller.stickMag ~= 0 then
+                
+                m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
+                local angle = atan2s(m.controller.stickX, m.controller.stickY) + last_angle + 0x8000
+                m.controller.stickX = m.controller.stickMag * coss(angle)
+                m.controller.stickY = m.controller.stickMag * sins(angle)
+            end
         end
+        -- Removing the relative controls
+        -- if m.controller.stickMag ~= 0 then
+        --     m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
+        --     local angle = atan2s(m.controller.stickX, m.controller.stickY) - gLakituState.yaw
+        --     m.controller.stickX = m.controller.stickMag * coss(angle)
+        --     m.controller.stickY = m.controller.stickMag * sins(angle)
+        -- end
     end
 end
 
