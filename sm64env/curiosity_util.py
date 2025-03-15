@@ -29,10 +29,7 @@ class CURIOSITY:
         y = np.linspace(-1, 1, b)
         z = np.linspace(-1, 1, c)
         xv, yv, zv = np.meshgrid(x, y, z, indexing='ij')
-        # print("---------")
-        # print(xv)
-        # print(yv)
-        # print(zv)
+
         ellipsoid = (xv)**2 + (yv)**2 + (zv)**2 <= 1
         values = np.exp(-(xv**2 + yv**2 + zv**2))
         return ellipsoid, values
@@ -86,10 +83,7 @@ class CURIOSITY:
             return
         self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
         self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.clip(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], 0, self.max_visits)
-        # self.F[indices] += 1
-        # self.F[indices[:, 0], indices[:, 1], indices[:, 2]] += 1
-        # self.F[indices[:, 0], indices[:, 1], indices[:, 2]] = np.min(self.F[indices[:, 0], indices[:, 1], indices[:, 2]], self.max_visits)
-        
+
 
 
     def pos_to_index(self,pos):
@@ -136,5 +130,17 @@ class CURIOSITY:
     
     def get_sphere_visits_multi(self, positions):
         return np.array([self.get_sphere_visits(pos) for pos in positions])
+
+
+    def entropy(self):
+        non_zero = self.F[self.F > 0].flatten()
+        if len(non_zero) == 0:
+            return np.inf
+        
+        non_zero = non_zero / np.sum(non_zero)
+        entropy = -np.sum(non_zero * np.log(non_zero))
+        terms = len(non_zero)
+        return  entropy, terms
+        
 
 

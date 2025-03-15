@@ -17,6 +17,7 @@ keyboard.is_pressed('q')
 
 
 img_save_frequency = 10
+max_game_length = 1000
 
 os.makedirs(f"./data/", exist_ok=True)
 
@@ -49,7 +50,7 @@ while running:
 
     if keyboard.is_pressed('q'):
         running = False
-    if keyboard.is_pressed('r'):
+    if keyboard.is_pressed('r') or run_time_counter >= max_game_length:
         if not resetted_last:
             obs = env.reset()
             run_id, run_time_counter, run_csv_file, run_csv_writer = new_run(run_csv_file)

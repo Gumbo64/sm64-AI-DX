@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision import transforms
 
 class EmbeddingModel(nn.Module):
-    def __init__(self):
+    def __init__(self, embedding_size=64):
         super(EmbeddingModel, self).__init__()
         self.convnet = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=5, stride=1, padding=2),
@@ -20,7 +20,7 @@ class EmbeddingModel(nn.Module):
             nn.ReLU(),
             nn.Linear(256, 256),
             nn.ReLU(),
-            nn.Linear(256, 3),
+            nn.Linear(256, embedding_size),
         )
 
     def forward(self, x):

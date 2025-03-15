@@ -1,8 +1,8 @@
 -- name: AI mod
 -- description: poop
-local tagCompatibilityMode = false
 local lockCameraMode = true
 
+local tagCompatibilityMode = false
 if not tagCompatibilityMode then
     gLevelValues.entryLevel = LEVEL_BOB
     -- gLevelValues.entryLevel = LEVEL_BITDW
@@ -37,19 +37,27 @@ function player_respawn(m)
     -- reset most variables
     init_single_mario(m)
     last_angle = first_angle
-
-    -- spawn location/angle
+    m.controller.stickX = 0
+    m.controller.stickY = 0
+    m.controller.stickMag = 0
+    m.controller.buttonDown = 0
+    m.controller.buttonPressed = 0
+    
+    -- -- spawn location/angle
     m.pos.x = my_start_pos.x
     m.pos.y = my_start_pos.y
     m.pos.z = my_start_pos.z
     m.faceAngle.y = 0
     
-    -- reset the rest of the variables
+    -- -- reset the rest of the variables
     m.capTimer = 0
     m.health = 0x880
     m.numLives = 6
     soft_reset_camera(m.area.camera)
     stop_cap_music()
+    
+    warp_exit_level(0)
+    warp_restart_level()
 end
 
 -- death function
@@ -85,7 +93,7 @@ function update_mario(m)
             if m.controller.stickMag ~= 0 then
                 
                 m.controller.stickMag = math.sqrt(m.controller.stickY * m.controller.stickY + m.controller.stickX * m.controller.stickX)
-                local angle = atan2s(m.controller.stickX, m.controller.stickY) + last_angle + 0x8000
+                local angle = atan2s(m.controller.stickX, m.controller.stickY) - gLakituState.yaw + last_angle + 0x8000
                 m.controller.stickX = m.controller.stickMag * coss(angle)
                 m.controller.stickY = m.controller.stickMag * sins(angle)
             end

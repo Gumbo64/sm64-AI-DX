@@ -50,7 +50,6 @@ class SM64_ENV_GOALPOINT(gym.Env):
         truncated = False
         info = {}
 
-
         return obs, reward, done, truncated, info
     
     

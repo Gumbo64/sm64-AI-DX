@@ -2146,6 +2146,7 @@ struct Pixels {
     int pixelsWidth;
     int pixelsHeight;
     unsigned char* pixels;
+    unsigned char* pixelsGrayscale;
 };
 
 struct Pixels sPixels = {0};
@@ -2159,6 +2160,20 @@ struct Pixels *get_pixels() {
     sPixels.pixelsWidth = rdp.viewport.width;
     sPixels.pixelsHeight = rdp.viewport.height;
 
-    gfx_rapi->get_pixels(rdp.viewport.width, rdp.viewport.height, sPixels.pixels);
+    gfx_rapi->get_pixels(rdp.viewport.width, rdp.viewport.height, false, sPixels.pixels);
     return &sPixels;
 }
+
+struct Pixels *get_pixels_grayscale() {
+    if (sPixels.pixels == NULL) {
+        sPixels.pixels = malloc(rdp.viewport.width * rdp.viewport.height * 4);
+    } else {
+        sPixels.pixels = realloc(sPixels.pixels, rdp.viewport.width * rdp.viewport.height * 4);
+    }
+    sPixels.pixelsWidth = rdp.viewport.width;
+    sPixels.pixelsHeight = rdp.viewport.height;
+    gfx_rapi->get_pixels(rdp.viewport.width, rdp.viewport.height, true, sPixels.pixels);
+    return &sPixels;
+}
+
+

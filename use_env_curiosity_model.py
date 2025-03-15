@@ -65,7 +65,7 @@ class Agent(nn.Module):
 def make_env(i):
     def mkenv():
         # print(i, i % 16 == 0, 7777 + (i // 16))
-        return SM64_ENV_CURIOSITY(multi_step=4, num_points=5000,  max_ray_length=MAX_RAY_LENGTH 
+        return SM64_ENV_CURIOSITY(multi_step=4, num_points=5000, 
                                   server= (i % 16 == 0), server_port=(7777 + (i // 16)))
         # return SM64_ENV_CURIOSITY(multi_step=multi_step, server=True, server_port=7777 + i)
     return mkenv

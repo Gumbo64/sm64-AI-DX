@@ -69,13 +69,8 @@ os.makedirs(f"./data/", exist_ok=True)
 env = SM64_ENV_PIXELS()
 obs = env.reset()
 
-# Create window
-cv2.namedWindow('SM64 AI DX', cv2.WINDOW_NORMAL)
-cv2.resizeWindow('SM64 AI DX', 1000, 1000)
 
 stickX = stickY = buttonA = buttonB = buttonZ = 0
-
-
 
 resetted_last = False
 running = True
@@ -142,9 +137,6 @@ while running:
     # cv2.imshow('Closest Image', closest_img)
 
     
-    if cv2.getWindowProperty('SM64 AI DX', cv2.WND_PROP_VISIBLE) < 1:
-        running = False
-
     time.sleep(0.016)
 
 cv2.destroyAllWindows()

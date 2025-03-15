@@ -734,10 +734,14 @@ static void gfx_opengl_finish_render(void) {
 static void gfx_opengl_shutdown(void) {
 }
 
-static void gfx_opengl_get_pixels(int width, int height, unsigned char* pixels){
+static void gfx_opengl_get_pixels(int width, int height, bool grayscale, unsigned char* pixels){
     // pixels should be size of width * height * 3
     
-    glReadPixels((width) % 4, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    if (grayscale)
+        glReadPixels((width) % 4, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, pixels);
+    else {
+        glReadPixels((width) % 4, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    }
 } 
 
 struct GfxRenderingAPI gfx_opengl_api = {

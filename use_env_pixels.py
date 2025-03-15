@@ -6,6 +6,7 @@ from sm64env.sm64env_pixels import SM64_ENV_PIXELS
 import cv2
 import numpy as np
 import keyboard
+import time
 env = SM64_ENV_PIXELS()
 obs = env.reset()
 
@@ -52,6 +53,7 @@ while running:
     
     if cv2.getWindowProperty('SM64 AI DX', cv2.WND_PROP_VISIBLE) < 1:
         running = False
-    # time.sleep(0.016)
+
+    time.sleep(0.016)
 
 cv2.destroyAllWindows()

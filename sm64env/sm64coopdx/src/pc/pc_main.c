@@ -549,6 +549,7 @@ struct NetworkPlayer *get_network_player(int index) {
 }
 
 
+
 #include "game/camera.h"
 
 Vec3f *get_lakitu_pos() {
@@ -597,6 +598,8 @@ void sample_sphere_surface(Vec3f point, f32 new_len) {
     point[1] *= scale;
     point[2] *= scale;
 }
+
+
 
 bool raycast_with_normal(Vec3f hitpos, Vec3f normal, Vec3f start, Vec3f dir) {
     struct Surface *surf = NULL;
@@ -661,3 +664,35 @@ void raycast_sphere_with_normal(Vec3f *hitpos_arr, Vec3f *normal_arr, int amount
 
     }
 }
+
+
+// void raycast_grid(Vec3f *hitpos_arr, Vec3f *normal_arr, int width, int height, int gridSpacing,
+//                   f32 maxRayLength, f32 cameraDirBiasFactor) {
+//     Vec3f start;
+//     vec3f_copy(start, gMarioStates[0].pos);
+//     start[1] += 200.0f;
+    
+//     Vec3f dir;
+//     vec3f_copy(dir, gCamera->focus);
+//     vec3f_sub(dir, gCamera->pos);
+//     vec3f_normalize(dir);
+
+    
+//     for (int i = -height; i < height; i++) {
+//         for (int j = -width; j < width; j++) {
+//             Vec3f pos;
+//             pos[0] = sin(j * (M_PI / width)) * gridSpacing;
+//             pos[1] = sin(i * (M_PI / height)) * gridSpacing;
+//             pos[2] = 0;
+
+//             vec3f_add(pos, gMarioStates[0].pos);
+            
+            
+
+//             if (raycast_with_normal(hitpos_arr[i * width + j], normal_arr[i * width + j], start, dir)) {
+//                 break;
+//             }
+            
+//         }
+//     }
+// }

@@ -32,7 +32,7 @@ struct GfxRenderingAPI {
     void (*end_frame)(void);
     void (*finish_render)(void);
     void (*shutdown)(void);
-    void (*get_pixels)(int width, int height, unsigned char* pixels);
+    void (*get_pixels)(int width, int height, bool grayscale, unsigned char* pixels);
 };
 
 #endif

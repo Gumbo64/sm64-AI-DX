@@ -18,7 +18,7 @@ criterion = nn.TripletMarginLoss(margin=1.0, p=2)
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 transform = MyTransform
-dataset = TripletImageLoader('./data', transform=transform)
+dataset = TripletImageLoader('./data', transform=transform, gamma=2)
 dataloader = DataLoader(dataset, batch_size=1024, shuffle=True, num_workers=16)
 
 # Training loop
@@ -43,7 +43,6 @@ for epoch in tqdm(range(num_epochs), desc='Epochs', unit='epoch'):
         if i % 10 == 9:    # print every 10 mini-batches
             tqdm.write(f'Epoch {epoch + 1}, Batch {i + 1}, Loss: {running_loss / 10:.3f}')
             running_loss = 0.0
-
-torch.save(model.state_dict(), 'triplet.pth')
+    torch.save(model.state_dict(), 'triplet.pth')
 
 print('Finished Training')

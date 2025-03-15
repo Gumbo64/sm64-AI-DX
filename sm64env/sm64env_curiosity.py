@@ -53,13 +53,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = [b > 0 for b in buttons]
         
+        # normalise stick
         newAngle = np.arctan2(stickY, stickX)
 
-        # stickAngle = np.arctan2(stickY, stickX) + math.pi
-        # lakituAngle = self.game.get_lakitu_yaw() * np.pi / 0x8000 # convert from sm64 units
-        # newAngle = stickAngle + self.my_angle
-
-        length = min(np.sqrt(stickX**2 + stickY**2), 80)
+        length = min(np.sqrt(stickX**2 + stickY**2), 79)
         stickX = length * np.cos(newAngle)
         stickY = length * np.sin(newAngle)
 
@@ -136,10 +133,10 @@ class SM64_ENV_CURIOSITY(gym.Env):
         tokens[:, 0:3] -= origin # Translate position
         
         # angle = math.atan2(dir[2], dir[0])
-        angle = np.array(state.faceAngle) # 3d array
-        angle = angle[1] * np.pi / 0x8000 # convert from sm64 units
-        self.my_angle = angle
 
+        camera_pos = self.game.get_lakitu_pos()
+        dir = camera_pos - origin
+        angle = math.atan2(dir[2], dir[0])
 
         rotation_matrix = np.array([[math.cos(angle), 0, -math.sin(angle)], [0, 1, 0], [math.sin(angle), 0, math.cos(angle)]])
         tokens[:, 0:3] = np.dot(tokens[:, 0:3], rotation_matrix)

@@ -1,6 +1,6 @@
 fullscreen false
-window_x 1378
-window_y 667
+window_x 1589
+window_y 1072
 window_w 256
 window_h 144
 vsync false

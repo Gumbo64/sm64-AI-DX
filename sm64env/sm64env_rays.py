@@ -43,25 +43,18 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stick, buttons = action
         
         stickX, stickY = stick
-        buttonA, buttonB, buttonZ = [b > 0 for b in buttons]
-        
-        stickAngle = np.arctan2(stickY, stickX) + math.pi
-        # lakituAngle = self.game.get_lakitu_yaw() * np.pi / 0x8000 # convert from sm64 units
-        
-        newAngle = stickAngle + self.my_angle
-        length = min(np.sqrt(stickX**2 + stickY**2), 80)
-        stickX = length * np.cos(newAngle)
-        stickY = length * np.sin(newAngle)
+        buttonA, buttonB, buttonZ = buttons
 
         self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
         self.game.step_game(num_steps=self.multi_step)
         
         obs = self.get_observation()
-        reward = 0
+        reward = self.calculate_reward(obs)
         done = False
         truncated = False
         info = {}
 
+        
 
         return obs, reward, done, truncated, info
     

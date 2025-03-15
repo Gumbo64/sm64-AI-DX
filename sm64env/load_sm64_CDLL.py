@@ -20,6 +20,9 @@ def clear_sm64_exes():
 
 class SM64_GAME:
     def __init__(self, server=True, server_port=7777, config_file="sm64config.txt"):
+        self.state = {"server": server, "server_port": server_port, "config_file": config_file}
+
+
         base_sm64_exe_path = os.path.join(build_dir, "sm64coopdx")
         self.sm64_exe_path = os.path.join(build_dir, f"sm64coopdx_{str(id(self))}")
         shutil.copyfile(base_sm64_exe_path, self.sm64_exe_path)
@@ -52,6 +55,9 @@ class SM64_GAME:
         self.sm64_CDLL.get_pixels.argtypes = []
         self.sm64_CDLL.get_pixels.restype = ctypes.POINTER(Pixels)
 
+        self.sm64_CDLL.get_pixels_grayscale.argtypes = []
+        self.sm64_CDLL.get_pixels_grayscale.restype = ctypes.POINTER(Pixels)
+
         self.sm64_CDLL.get_lakitu_pos.argtypes = []
         self.sm64_CDLL.get_lakitu_pos.restype = ctypes.POINTER(Vec3f)
 
@@ -71,21 +77,24 @@ class SM64_GAME:
         self.ctypes_commands[:] = [commands.encode('utf-8') for commands in self.commands]
         self.sm64_CDLL.main(len(self.commands), self.ctypes_commands)
 
+        self.set_controller(buttonL=1)
+        self.step_game()
+
     def __del__(self):
         # Unload the shared library, deinitialise the game, delete the temporary executable
         # dlclose_func = ctypes.cdll.LoadLibrary('').dlclose
         # dlclose_func.argtypes = [ctypes.c_void_p]
         # handle = self.sm64_CDLL._handle
 
-        self.sm64_CDLL.game_deinit()
-        del self.sm64_CDLL
+        if hasattr(self, "sm64_CDLL"):
+            self.sm64_CDLL.game_deinit()
+            del self.sm64_CDLL
         # dlclose_func(handle)
         
         # Sadly this doesn't always work with async etc
         try:
             os.remove(self.sm64_exe_path)
-        except OSError as e:
-            # print(f"Error removing {self.sm64_exe_path}")
+        except:
             pass
 
     def step_game(self, num_steps=1):
@@ -158,9 +167,29 @@ class SM64_GAME:
         # flip image (cosmetic for human viewing, AI doesnt care)
         img = np.flipud(img).astype(np.uint8)
         return img
+    
+    def get_pixels_grayscale(self):
+        ctypes_pixels = self.sm64_CDLL.get_pixels_grayscale().contents
+        w = ctypes_pixels.pixelsWidth
+        h = ctypes_pixels.pixelsHeight
+
+        img = np.ctypeslib.as_array(ctypes_pixels.pixels, shape=(h, w))
+        img = np.flipud(img).astype(np.uint8)
+ 
+        return img
 
     def get_lakitu_pos(self):
         return np.array(self.sm64_CDLL.get_lakitu_pos().contents)
     
     def get_lakitu_yaw(self):
         return self.sm64_CDLL.get_lakitu_yaw()
+    
+
+    # Makes pickling work. Warning: this just saves the settings and nothing else, doesn't save the actual game state
+    def __getstate__(self):
+        return self.state
+    def __setstate__(self, state):
+        self.__del__()
+        self.__init__(server=state["server"], server_port=state["server_port"], config_file=state["config_file"])
+
+    

@@ -1,9 +1,8 @@
 import gym.vector
-import gym.vector
-from sm64env.sm64env_curiosity import SM64_ENV_CURIOSITY
+import sm64env.curiosity_util as curiosity_util
+from sm64env.sm64env_pixels import SM64_ENV_PIXELS
 from sm64env.load_sm64_CDLL import clear_sm64_exes
 from visualiser import visualise_game_tokens, visualise_curiosity
-import random
 import gym
 import time
 
@@ -11,138 +10,120 @@ import torch
 import torch.nn as nn
 from torch.distributions.normal import Normal
 import torch.optim as optim
-import torch.cuda as cuda
 import numpy as np
 
 import wandb
 from torch.utils.tensorboard import SummaryWriter
 import tqdm
 import os
-import math
-# os.environ["WANDB_SILENT"] = "true"
-
 clear_sm64_exes()
 
-n_envs = 15
+n_envs = 8
 steps_per_iter = 1600
-ppo_epochs = 10
-mini_batch_size = 4096 # fills ~15GB of VRAM
+ppo_epochs = 4
+
+mini_batch_size = 256
+
 iter_per_log = 1
 iter_per_save = 10
+
+
+frame_stack_amount = 4
+height = 72
+width = 128
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
+obs_stack = np.zeros((n_envs, frame_stack_amount, height, width), dtype=np.float32)
+def format_obs(obs):
+    global obs_stack
+    obs = np.dot(obs, [0.30, 0.59, 0.11]) / 255
+    obs_stack = np.roll(obs_stack, shift=1, axis=1)
+    obs_stack[:, 0] = obs
+    
+    return obs_stack
 
-class Curios_Encoder(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.num_inputs = 8
-        self.token_size = 128
-
-        self.embed_size = 128
-
-        self.preprocess = nn.Sequential(
-            layer_init(nn.Linear(self.num_inputs, self.token_size)),
-            nn.Tanh(),
-        )
-
-        encoder_layer = nn.TransformerEncoderLayer(d_model=self.token_size, nhead=4, dim_feedforward=512, batch_first=True)
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=3)
-        
-        self.linear = nn.Sequential(
-            layer_init(nn.Linear(self.token_size, self.embed_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(self.embed_size, self.embed_size)),
-        )
-
-    def forward(self, array_of_obs):
-        # Transformer part
-        tensor_array_of_obs = nn.utils.rnn.pad_sequence(array_of_obs, batch_first=True, padding_value=0).to(device)
-
-        x = self.preprocess(tensor_array_of_obs)
-        # print(x.shape)
-        x = self.transformer(x)
-        # print(x.shape)
-        # xs = x.mean(dim=1)
-        # First token is always the self player token ( (1,0,0) one-hot encoded )
-        # This will act like a <cls> token
-        # Learn to output to 1 token instead of many. Should be way easier to learn
-        xs = x[:, 0, :]
-
-        # Actor-critic part
-        embeds = self.linear(xs)
-        return embeds
+def curiosity_reward(positions, curiosity):
+    curiosity.add_circles(positions)
+    visits = curiosity.get_visits_multi(positions)
+    # rewards = np.exp(- 4 * visits / curiosity.max_visits)
+    rewards = 1 - (visits / curiosity.max_visits)
+    return rewards
 
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-
-        self.encoder = Curios_Encoder()
-        self.num_inputs = 128
-        self.middle_size = 512
+        self.mid_size = 2048
         self.num_outputs = 5
 
-        self.linear = nn.Sequential(
-            layer_init(nn.Linear(self.num_inputs, 128)),
-            nn.Tanh(),
-            layer_init(nn.Linear(512, 512)),
-            nn.Tanh(),
-            layer_init(nn.Linear(512, self.num_outputs)),
-            nn.Tanh(),
-        )   
+        self.std = 0.0
+
+        self.conv = nn.Sequential(
+            # 4 frame stack so that is the first number
+            layer_init(nn.Conv2d(frame_stack_amount, 64, 8, stride=2)),
+            nn.MaxPool2d(kernel_size=4, stride=2),
+            nn.LeakyReLU(),
+            layer_init(nn.Conv2d(64, 256, 4, stride=2)),
+            nn.LeakyReLU(),
+            layer_init(nn.Conv2d(256, 512, 4, stride=2)),
+            nn.LeakyReLU(),
+            layer_init(nn.Conv2d(512, 512, 2, stride=1)),
+            nn.Flatten(),
+
+
+            # input size calculated from torch_layer_size_test.py, given frame_stack_amount channels and 128x72 input
+            layer_init(nn.Linear(2048, 2048)),
+            nn.LeakyReLU(),
+            layer_init(nn.Linear(2048, 2048)),
+            nn.LeakyReLU(),
+            layer_init(nn.Linear(2048, self.mid_size)),
+            nn.LeakyReLU(),
+        )
         
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(self.middle_size, 128)),
+            layer_init(nn.Linear(self.mid_size, 1024)),
             nn.Tanh(),
-            layer_init(nn.Linear(128, 1), std=1.0),
+            layer_init(nn.Linear(1024, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(self.middle_size, 128)),
+            layer_init(nn.Linear(self.mid_size, 2048)),
             nn.Tanh(),
+            layer_init(nn.Linear(2048, 1024)),
             # layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
-            layer_init(nn.Linear(128, self.num_outputs)),
+            layer_init(nn.Linear(1024, self.num_outputs)),
             nn.Tanh(),
         )
-        self.actor_log_std = nn.Parameter(torch.zeros(1, self.num_outputs))
+        self.actor_log_std = nn.Parameter(torch.ones(1, self.num_outputs) * self.std)
 
-    def forward(self, array_of_obs):
-        # Transformer part
-        tensor_array_of_obs = nn.utils.rnn.pad_sequence(array_of_obs, batch_first=True, padding_value=0).to(device)
-
-        x = self.preprocess(tensor_array_of_obs)
-        # print(x.shape)
-        x = self.transformer(x)
-        # print(x.shape)
-        # xs = x.mean(dim=1)
-        # First token is always the self player token ( (1,0,0) one-hot encoded )
-        # This will act like a <cls> token
-        # Learn to output to 1 token instead of many. Should be way easier to learn
-        xs = x[:, 0, :]
-
+    def forward(self, x):
+        x = self.conv(x)
         # Actor-critic part
-        value = self.critic(xs)
-        mu = self.actor_mean(xs)
+        value = self.critic(x)
+        mu = self.actor_mean(x)
         std   = self.actor_log_std.exp().expand_as(mu)
         dist  = Normal(mu, std)
         return dist, value
-
+    
 
 def make_env(i):
     def mkenv():
-        # return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=True)
+        return SM64_ENV_PIXELS(server = True, server_port=7777 + i, multi_step=4)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
-def ppo_iter(mini_batch_size, cat_obs_s, actions, log_probs, returns, advantage):
-    batch_size = len(cat_obs_s)
+def ppo_iter(mini_batch_size, obs_s, actions, log_probs, returns, advantage):
+    batch_size = len(obs_s)
     for _ in range(batch_size // mini_batch_size):
         rand_ids = np.random.randint(0, batch_size, mini_batch_size)
-        yield_obs_s = [cat_obs_s[i] for i in rand_ids]
-        yield yield_obs_s, actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantage[rand_ids, :]
+        obs_s_yield = torch.zeros((mini_batch_size, frame_stack_amount, height, width), dtype=torch.float32).to(device)
+        for i in range(frame_stack_amount):
+            valid_ids = rand_ids - i >= 0
+            obs_s_yield[valid_ids, i] = obs_s[rand_ids[valid_ids] - i]
+         
+        yield obs_s_yield, actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantage[rand_ids, :]
 
 def ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, advantages, clip_param=0.2):
     for _ in range(ppo_epochs):
@@ -176,18 +157,6 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
         returns.insert(0, gae + values[step])
     return returns
 
-def torchify_obs(obs, device):
-    torchObs = []
-    for x in obs:
-        torchObs.append(torch.tensor(x, dtype=torch.float32).to(device))
-    return torchObs
-
-def cat_and_detach_obs(obs_s):
-    new_obs_s = []
-    for time in range(len(obs_s)):
-        for game_num in range(len(obs_s[time])):
-            new_obs_s.append(obs_s[time][game_num].detach())
-    return new_obs_s
 
 def clamp_stick(tensor_vec):
     # Clamp the stick length, but maintain the direction
@@ -212,7 +181,8 @@ agent = Agent().to(device)
 # agent.load_state_dict(torch.load("models/small_ppo_1734886878.8964658_1100.pth"))
 # agent.actor_log_std.data.fill_(0)
 
-optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
+# optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
+optimizer = optim.Adam(agent.parameters(), lr=3e-4)
 
 run_name = f"small_ppo_{time.time()}"
 wandb.init(
@@ -231,6 +201,7 @@ print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserve
 
 envs = gym.vector.AsyncVectorEnv([make_env(i) for i in range(n_envs)], shared_memory=False)
 # envs = gym.vector.SyncVectorEnv([make_env(i) for i in range(n_envs)])
+curiosity = curiosity_util.CURIOSITY(max_visits=400)
 
 
 last_log_time = time.time()
@@ -246,12 +217,18 @@ with tqdm.tqdm() as iterbar:
         entropy = 0
 
         obs, info = envs.reset()
+
+        curiosity.soft_reset()
+
+        obs_stack = np.zeros((n_envs, frame_stack_amount, height, width), dtype=np.float32)
+        obs = format_obs(obs)
+
         for _ in tqdm.tqdm(range(steps_per_iter), leave=False):
             # print(torch.cuda.get_device_properties(0).total_memory,torch.cuda.memory_reserved(0),torch.cuda.memory_allocated(0))
 
             # Feed forward
             with torch.no_grad():
-                torchObs = torchify_obs(obs, device)
+                torchObs = torch.tensor(obs, dtype=torch.float32).to(device)
                 dist, value = agent.forward(torchObs)
 
             # Step
@@ -260,7 +237,11 @@ with tqdm.tqdm() as iterbar:
 
             button_actions = (action_raw[:, 2:5] > 0.8).bool().cpu()
             action = (stick_actions, button_actions)
-            next_obs, reward, done, truncated, info =  envs.step(action)
+            next_obs, _, done, truncated, info =  envs.step(action)
+            next_obs = format_obs(next_obs) # grayscale + stack frames
+
+            positions = np.array([info['pos'][i] for i in range(n_envs)])
+            reward = curiosity_reward(positions, curiosity) # curiosity reward
 
             # Calculate storage stuff
             log_prob = dist.log_prob(action_raw)
@@ -272,7 +253,7 @@ with tqdm.tqdm() as iterbar:
             rewards.append(torch.tensor(reward, dtype=torch.float32).unsqueeze(1).to(device))
             masks.append(torch.tensor(1 - done, dtype=torch.float32).unsqueeze(1).to(device))
             
-            obs_s.append(torchObs) #all the internals of the torchObs are already on the device
+            obs_s.append(torchObs[:,0]) #all the internals of the torchObs are already on the device
             actions.append(action_raw)
 
             obs = next_obs
@@ -282,7 +263,7 @@ with tqdm.tqdm() as iterbar:
 
         # Bootstrapping the last obs
         with torch.no_grad():
-            last_torchObs = torchify_obs(obs, device)
+            last_torchObs = torch.tensor(obs, dtype=torch.float32).to(device)
             _, last_value = agent.forward(last_torchObs)
             returns = compute_gae(last_value, rewards, masks, values)
 
@@ -290,8 +271,8 @@ with tqdm.tqdm() as iterbar:
         returns = torch.cat(returns).detach()
         log_probs = torch.cat(log_probs).detach()
         values    = torch.cat(values).detach()
-        obs_s = cat_and_detach_obs(obs_s)
-        actions   = torch.cat(actions)
+        obs_s = torch.cat(obs_s)
+        actions   = torch.cat(actions).detach()
         advantages = returns - values
 
         ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, advantages)
@@ -299,7 +280,8 @@ with tqdm.tqdm() as iterbar:
         iter += 1
         iterbar.update(1)
         if iter % iter_per_save == 0:
-            torch.save(agent.state_dict(), f"models/{run_name}_{iter}.pth")
+            os.makedirs(f"models/{run_name}", exist_ok=True)
+            torch.save(agent.state_dict(), f"models/{run_name}/{iter}.pth")
 
         if iter % iter_per_log == 0:
             rewards = torch.cat(rewards).detach()

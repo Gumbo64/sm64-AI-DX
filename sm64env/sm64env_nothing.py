@@ -8,7 +8,7 @@ import numpy as np
 def isInactive(localPlayer, netPlayer):
     return (netPlayer == None) or (not netPlayer.connected) or (localPlayer.currCourseNum != netPlayer.currCourseNum) or (localPlayer.currActNum != netPlayer.currActNum) or (localPlayer.currLevelNum != netPlayer.currLevelNum) or (localPlayer.currAreaIndex != netPlayer.currAreaIndex)
 
-class SM64_ENV_PIXELS(gym.Env):
+class SM64_ENV_NOTHING(gym.Env):
     def __init__(self, multi_step=1, server=True, server_port=7777):
         self.game = load_sm64_CDLL.SM64_GAME(server=server, server_port=server_port)
     
@@ -19,9 +19,7 @@ class SM64_ENV_PIXELS(gym.Env):
             spaces.MultiBinary(3),
         ))
                 
-        self.observation_space = spaces.Box(
-            low=0, high=255, shape=(72, 128, 3), dtype=np.uint8
-        )
+        self.observation_space = spaces.Box(low=0, high=255, shape=(0,), dtype=np.uint8)
         
         self.multi_step = multi_step
 
@@ -44,18 +42,13 @@ class SM64_ENV_PIXELS(gym.Env):
     
     
     def get_observation(self):
-        img = self.game.get_pixels()
-
-        if img.shape[0] == 0:
-            img = np.zeros(self.observation_space.shape, dtype=np.uint8)
-            return img
-        
-        return img
+        return np.empty((0, 0, 0), dtype=np.uint8)
     
     def get_info(self):
         state = self.game.get_mario_state(0)
         return {
-            "pos": np.array(state.pos)
+            "pos": np.array(state.pos),
+            "vel": np.array(state.vel),
         }
 
     def calculate_reward(self, obs):
@@ -67,7 +60,6 @@ class SM64_ENV_PIXELS(gym.Env):
         self.game.set_controller(buttonL=0)
         self.game.step_game(num_steps=20) # takes 20 frames to warp out and in the level
         return self.get_observation(), self.get_info()
-
 
 
 
