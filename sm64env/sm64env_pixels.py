@@ -55,7 +55,8 @@ class SM64_ENV_PIXELS(gym.Env):
     def get_info(self):
         state = self.game.get_mario_state(0)
         return {
-            "pos": np.array(state.pos)
+            "pos": np.array(state.pos),
+            "vel": np.array(state.vel),
         }
 
     def calculate_reward(self, obs):

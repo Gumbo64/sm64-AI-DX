@@ -1,5 +1,4 @@
 from . import load_sm64_CDLL
-from . import curiosity_util
 import gym
 from gym import spaces
 import numpy as np
@@ -52,12 +51,18 @@ class SM64_ENV_CURIOSITY(gym.Env):
         reward = self.calculate_reward(obs)
         done = False
         truncated = False
-        info = {}
+        info = self.get_info()
 
         
 
         return obs, reward, done, truncated, info
     
+    def get_info(self):
+        state = self.game.get_mario_state(0)
+        return {
+            "pos": np.array(state.pos),
+            "vel": np.array(state.vel),
+        }
     
     def get_observation(self):
         # PLAYER TOKEN
@@ -76,28 +81,16 @@ class SM64_ENV_CURIOSITY(gym.Env):
         one_hot = np.zeros((self.num_points, 1))
         pos_array, normal_array = self.game.get_raycast_sphere_with_normal(amount=self.num_points, maxRayLength=self.max_ray_length)
         
-        # visits = self.curiosity.get_sphere_visits_multi(pos_array)
-
         visits = np.expand_dims(visits, axis=1)
 
         point_tokens = np.concatenate([pos_array, normal_array, one_hot], axis=1)
-        # point_tokens = point_tokens[np.where(~np.all(normal_array == 0, axis=1))] # Remove zero normals, not necessary anymore
-
+    
         if self.fps_amount < len(point_tokens):
             point_tokens = point_tokens[fpsample.fps_sampling(point_tokens[:, 0:3], self.fps_amount)]
 
-        # self.avg_visits = 0.9 * self.avg_visits + 0.1 * np.mean(point_tokens[:, 7]) # Rewards are at index 7
-        # self.avg_visits = np.mean(point_tokens[:, 7]) # Rewards are at index 7
-
-        
-        # distances = np.linalg.norm(point_tokens[:, 0:3] - self.my_pos, axis=1) / self.max_ray_length
-        # # distances_square = distances ** 2
-        # self.visits_reward = np.mean((point_tokens[:, 7]/self.max_visits) * distances)
 
         self.distances = np.linalg.norm(point_tokens[:, 0:3] - self.my_pos, axis=1)
 
-        # print(self.avg_visits)
-        self.curiosity.add_circles(point_tokens[:, 0:3]) # Curiosity update for each point
 
         player_tokens[:, 3:6] /= 50 # Normalize velocity for players (not point normals though)
         tokens = np.concatenate([player_tokens, point_tokens])
@@ -110,11 +103,9 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
         tokens[:, 0:3] -= origin # Translate position
         
-        # angle = math.atan2(dir[2], dir[0])
-        angle = np.array(state.faceAngle) # 3d array
-        angle = angle[1] * np.pi / 0x8000 # convert from sm64 units
-        self.my_angle = angle
-
+        camera_pos = self.game.get_lakitu_pos()
+        dir = camera_pos - origin
+        angle = math.atan2(dir[2], dir[0])
 
         rotation_matrix = np.array([[math.cos(angle), 0, -math.sin(angle)], [0, 1, 0], [math.sin(angle), 0, math.cos(angle)]])
         tokens[:, 0:3] = np.dot(tokens[:, 0:3], rotation_matrix)
@@ -124,19 +115,9 @@ class SM64_ENV_CURIOSITY(gym.Env):
         return tokens
 
     def reset(self):
-        self.avg_visits = 0
         self.game.set_controller(buttonL=1)
         self.game.step_game()
-        if self.soft_reset:
-            self.curiosity.soft_reset()
-        else:
-            self.curiosity.reset()
-        return self.get_observation(), {}
+        self.game.set_controller(buttonL=0)
+        self.game.step_game(num_steps=20) # takes 20 frames to warp out and in the level
+        return self.get_observation(), self.get_info()
     
-
-
-
-
-
-
-

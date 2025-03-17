@@ -23,7 +23,7 @@ import math
 
 clear_sm64_exes()
 
-n_envs = 15
+n_envs = 8
 steps_per_iter = 1600
 ppo_epochs = 10
 mini_batch_size = 4096 # fills ~15GB of VRAM
@@ -89,7 +89,7 @@ class Agent(nn.Module):
 def make_env(i):
     def mkenv():
         # return SM64_ENV_CURIOSITY(server = (i % 16 == 0), server_port=(7777 + (i // 16)), soft_reset=True)
-        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=True)
+        return SM64_ENV_CURIOSITY(server = True, server_port=7777 + i, soft_reset=False)
     return mkenv
 
 # https://github.com/higgsfield-ai/higgsfield/blob/main/higgsfield/rl/rl_adventure_2/3.ppo.ipynb
@@ -101,8 +101,9 @@ def ppo_iter(mini_batch_size, cat_obs_s, actions, log_probs, returns, advantage)
         yield yield_obs_s, actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantage[rand_ids, :]
 
 def ppo_update(ppo_epochs, mini_batch_size, obs_s, actions, log_probs, returns, advantages, clip_param=0.2):
+    advantages_norm = (advantages - advantages.mean()) / (advantages.std() + 1e-10) # Normalise the advantages
     for _ in range(ppo_epochs):
-        for obs, action, old_log_probs, return_, advantage in ppo_iter(mini_batch_size, obs_s, actions, log_probs, returns, advantages):
+        for obs, action, old_log_probs, return_, advantage in ppo_iter(mini_batch_size, obs_s, actions, log_probs, returns, advantages_norm):
             # already torchified
             dist, value = agent.forward(obs)
             entropy = dist.entropy().mean()
@@ -168,7 +169,8 @@ agent = Agent().to(device)
 # agent.load_state_dict(torch.load("models/small_ppo_1734886878.8964658_1100.pth"))
 # agent.actor_log_std.data.fill_(0)
 
-optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
+# optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
+optimizer = optim.Adam(agent.parameters(), lr=3e-4)
 
 run_name = f"small_ppo_{time.time()}"
 wandb.init(

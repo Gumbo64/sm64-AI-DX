@@ -1,8 +1,8 @@
 fullscreen false
-window_x 1589
-window_y 1072
-window_w 256
-window_h 144
+window_x 834
+window_y 698
+window_w 873
+window_h 694
 vsync false
 msaa 0
 texture_filtering 2
@@ -77,7 +77,7 @@ coop_player_palette_cap ff 00 00
 coop_player_palette_emblem ff 00 00
 amount_of_players 16
 bubble_death true
-coop_host_port 7777
+coop_host_port 7780
 coop_host_save_slot 1
 coop_join_ip localhost
 coop_join_port 7777

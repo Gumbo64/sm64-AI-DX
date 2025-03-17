@@ -4,7 +4,7 @@ class CURIOSITY:
     def __init__(self, max_visits=1000):
         self.max_visits = max_visits
         self.chunk_xz_size = 40
-        self.visit_decay = 0.8
+        self.visit_decay = 0.5
         self.chunk_y_size = 100
         # self.chunk_y_size = 200
         

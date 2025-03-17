@@ -23,11 +23,11 @@ import math
 
 clear_sm64_exes()
 
-n_envs = 15
-steps_per_iter = 1600
+n_envs = 8
+steps_per_iter = 400
 ppo_epochs = 4
 
-mini_batch_size = 256
+mini_batch_size = 512
 
 iter_per_log = 1
 iter_per_save = 10
