@@ -218,6 +218,7 @@ with tqdm.tqdm() as iterbar:
 
             button_actions = (action_raw[:, 2:5] > 0.8).bool().cpu()
             action = (stick_actions, button_actions)
+            print(action)
             next_obs, reward, done, truncated, info =  envs.step(action)
 
             # Calculate storage stuff

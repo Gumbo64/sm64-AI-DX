@@ -108,7 +108,7 @@ function update_mario(m)
     end
 end
 
--- hook_event(HOOK_ON_HUD_RENDER, hud_hide)
+hook_event(HOOK_ON_HUD_RENDER, hud_hide)
 
 hook_event(HOOK_BEFORE_MARIO_UPDATE, update_mario)
 hook_event(HOOK_ON_LEVEL_INIT, on_init)

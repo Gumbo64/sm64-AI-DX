@@ -1286,39 +1286,39 @@ void cur_obj_update(void) {
     }
 
     // handle network area timer
-    if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
-        // make sure the area is valid
-        if (gNetworkPlayerLocal == NULL || !gNetworkPlayerLocal->currAreaSyncValid) {
-            goto cur_obj_update_end;
-        }
+    // if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
+    //     // make sure the area is valid
+    //     if (gNetworkPlayerLocal == NULL || !gNetworkPlayerLocal->currAreaSyncValid) {
+    //         goto cur_obj_update_end;
+    //     }
 
-        // catch up the timer in total loop increments
-        if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_LOOP) {
-            u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
-            if (difference >= gCurrentObject->areaTimerDuration && gCurrentObject->areaTimerDuration) {
-                u32 catchup = difference / gCurrentObject->areaTimerDuration;
-                catchup *= gCurrentObject->areaTimerDuration;
-                gCurrentObject->areaTimer += catchup;
-            }
-        }
+    //     // catch up the timer in total loop increments
+    //     if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_LOOP) {
+    //         u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
+    //         if (difference >= gCurrentObject->areaTimerDuration && gCurrentObject->areaTimerDuration) {
+    //             u32 catchup = difference / gCurrentObject->areaTimerDuration;
+    //             catchup *= gCurrentObject->areaTimerDuration;
+    //             gCurrentObject->areaTimer += catchup;
+    //         }
+    //     }
 
-        // catch up the timer for maximum
-        if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_MAXIMUM) {
-            u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
-            if (difference >= gCurrentObject->areaTimerDuration) {
-                if (gCurrentObject->areaTimer < 10) {
-                    gCurrentObject->areaTimer = gNetworkAreaTimer;
-                } else {
-                    gCurrentObject->areaTimer = (gNetworkAreaTimer - gCurrentObject->areaTimerDuration);
-                }
-            }
-        }
+    //     // catch up the timer for maximum
+    //     if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_MAXIMUM) {
+    //         u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
+    //         if (difference >= gCurrentObject->areaTimerDuration) {
+    //             if (gCurrentObject->areaTimer < 10) {
+    //                 gCurrentObject->areaTimer = gNetworkAreaTimer;
+    //             } else {
+    //                 gCurrentObject->areaTimer = (gNetworkAreaTimer - gCurrentObject->areaTimerDuration);
+    //             }
+    //         }
+    //     }
 
-        // cancel object update if it's running faster than the timer
-        if (gCurrentObject->areaTimer > gNetworkAreaTimer) {
-            goto cur_obj_update_end;
-        }
-    }
+    //     // cancel object update if it's running faster than the timer
+    //     if (gCurrentObject->areaTimer > gNetworkAreaTimer) {
+    //         goto cur_obj_update_end;
+    //     }
+    // }
 
 cur_obj_update_begin:;
 

@@ -2,7 +2,7 @@ import multiprocessing
 import time
 from sm64env.sm64env_nothing import SM64_ENV_NOTHING
 from sm64env.curiosity_util import CURIOSITY
-
+import random
 multiprocessing.set_start_method('spawn', force=True)
 import numpy as np
 
@@ -101,6 +101,8 @@ class SM64_WORKER(multiprocessing.Process):
             # score += 1 - c.get_visits(position)/c.max_visits + np.linalg.norm(velocity) / 100
             # c.add_circle(position)
             positions[i] = position
+            # time.sleep(0.0166 * self.multi_step)
+            time.sleep(random.uniform(0, 0.0166 * self.multi_step))
 
         return path, positions
         # return path, score

@@ -91,8 +91,6 @@ if __name__ == "__main__":
                             
                             task_queue.put((new_path, 0))
 
-                    if task_queue.qsize() == 0:
-                        break
                     iterbar.set_postfix(queue_size=task_queue.qsize()) 
                     iterbar.update(1)
 

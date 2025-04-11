@@ -56,45 +56,47 @@ def curiosity_reward(positions, curiosity):
 class Agent(nn.Module):
     def __init__(self):
         super().__init__()
-        self.mid_size = 2048
+        self.mid_size = 8192
         self.num_outputs = 5
 
         self.std = 0.0
 
         self.conv = nn.Sequential(
             # 4 frame stack so that is the first number
-            layer_init(nn.Conv2d(frame_stack_amount, 64, 8, stride=2)),
-            nn.MaxPool2d(kernel_size=4, stride=2),
+            layer_init(nn.Conv2d(frame_stack_amount, 512, 8, stride=2)),
             nn.LeakyReLU(),
-            layer_init(nn.Conv2d(64, 256, 4, stride=2)),
+            layer_init(nn.Conv2d(512, 1024, 8, stride=2)),
             nn.LeakyReLU(),
-            layer_init(nn.Conv2d(256, 512, 4, stride=2)),
+            layer_init(nn.Conv2d(1024, 2048, 4, stride=2)),
             nn.LeakyReLU(),
-            layer_init(nn.Conv2d(512, 512, 2, stride=1)),
+            layer_init(nn.Conv2d(2048, 4096, 2, stride=2)),
+            nn.LeakyReLU(),
+            layer_init(nn.Conv2d(4096, 8192, 2, stride=1)),
             nn.Flatten(),
 
 
             # input size calculated from torch_layer_size_test.py, given frame_stack_amount channels and 128x72 input
-            layer_init(nn.Linear(2048, 2048)),
+            layer_init(nn.Linear(40960, 32768)),
             nn.LeakyReLU(),
-            layer_init(nn.Linear(2048, 2048)),
+            layer_init(nn.Linear(32768, 16384)),
             nn.LeakyReLU(),
-            layer_init(nn.Linear(2048, self.mid_size)),
+            layer_init(nn.Linear(8192, self.mid_size)),
             nn.LeakyReLU(),
         )
         
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(self.mid_size, 1024)),
+            layer_init(nn.Linear(self.mid_size, 4096)),
             nn.Tanh(),
-            layer_init(nn.Linear(1024, 1), std=1.0),
+            layer_init(nn.Linear(4096, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(self.mid_size, 2048)),
+            layer_init(nn.Linear(self.mid_size, 4096)),
             nn.Tanh(),
-            layer_init(nn.Linear(2048, 1024)),
+            layer_init(nn.Linear(4096, 4096)),
+            nn.Tanh(),
             # layer_init(nn.Linear(512, self.num_outputs), std=actor_std),
-            layer_init(nn.Linear(1024, self.num_outputs)),
-            nn.Tanh(),
+            layer_init(nn.Linear(4096, self.num_outputs)),
+            # nn.Tanh(),
         )
         self.actor_log_std = nn.Parameter(torch.ones(1, self.num_outputs) * self.std)
 
@@ -184,7 +186,7 @@ agent = Agent().to(device)
 # optimizer = optim.Adam(agent.parameters(), lr=3e-4, weight_decay=1e-4)
 optimizer = optim.Adam(agent.parameters(), lr=3e-4)
 
-run_name = f"small_ppo_{time.time()}"
+run_name = f"pixels_curiosity_{time.time()}"
 wandb.init(
     project="sm64env",
     sync_tensorboard=True,
@@ -216,7 +218,10 @@ with tqdm.tqdm() as iterbar:
         masks     = []
         entropy = 0
 
-        obs, info = envs.reset()
+        # if you get an error here then you probably have the wrong resolution 
+        # in sm64config.txt 
+        # Set window_h = 72 and window_w = 128
+        obs, info = envs.reset() 
 
         curiosity.soft_reset()
 

@@ -43,6 +43,8 @@ def visualise_game(marioStates, points_array, normals_array):
     # plt.pause(0.001)
     ax.clear()
 
+
+
 def visualise_game_tokens(tokens, pause_time=0.1):
     # if pause_time == 0:
     #     fig = plt.figure()
@@ -124,3 +126,29 @@ def visualise_curiosity(curiosity, pause_time=1):
     # plt.pause(pause_time)
     # ax.clear()
     # # 
+
+def visualise_dfs_time(dfs, max_time):
+
+    # Get the coordinates where indices is True
+    F_indices = np.argwhere(dfs.F_time != np.inf)
+    # Reduce the number of points by sampling
+    sampled_indices = F_indices[np.random.choice(F_indices.shape[0], size=F_indices.shape[0] // 100, replace=False)]
+    # Plot circles at the sampled coordinates
+    true_x, true_y, true_z = dfs.multi_index_to_pos(sampled_indices).T
+
+    visits = dfs.F_time[sampled_indices[:, 0], sampled_indices[:, 1], sampled_indices[:, 2]]
+    ax.scatter(-true_x, true_z, true_y, c=visits/max_time, cmap='coolwarm', marker='o', alpha=0.2, s=(min(dfs.chunk_y_size, dfs.chunk_xz_size)**2)/16, zorder=10)
+    # Set the plot limits
+    ax.set_xlim(-dfs.bounding_size, dfs.bounding_size)
+    ax.set_ylim(-dfs.bounding_size, dfs.bounding_size)
+    ax.set_zlim(-dfs.bounding_size, dfs.bounding_size)
+    # Set labels for the axes
+    ax.set_xlabel('X')
+    ax.set_ylabel('Z')
+    ax.set_zlabel('Y')
+    ax.set_title('Mario 64 Curiosity')
+
+    # plt.savefig('curiosity.png')
+    plt.show()
+    # with open('picklePlot.pickle', 'wb') as file:
+    #     pickle.dump(fig, file)

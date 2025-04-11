@@ -9,14 +9,15 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 frame_stack_amount = 4
 conv_net = nn.Sequential(
     layer_init(nn.Conv2d(frame_stack_amount, 64, 8, stride=2)),
-    nn.MaxPool2d(kernel_size=4, stride=2),
     nn.LeakyReLU(),
-    layer_init(nn.Conv2d(64, 256, 4, stride=2)),
+    layer_init(nn.Conv2d(64, 128, 8, stride=2)),
     nn.LeakyReLU(),
-    layer_init(nn.Conv2d(256, 512, 4, stride=2)),
+    layer_init(nn.Conv2d(128, 256, 4, stride=2)),
     nn.LeakyReLU(),
-    layer_init(nn.Conv2d(512, 512, 2, stride=1)),
-    nn.Flatten(),
+    layer_init(nn.Conv2d(256, 512, 2, stride=2)),
+    nn.LeakyReLU(),
+    layer_init(nn.Conv2d(512, 1024, 2, stride=1)),
+    # nn.Flatten(),
 )
 
 

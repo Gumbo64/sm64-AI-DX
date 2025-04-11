@@ -19,8 +19,9 @@ class SM64_ENV_NOTHING(gym.Env):
             spaces.MultiBinary(3),
         ))
                 
-        self.observation_space = spaces.Box(low=0, high=255, shape=(0,), dtype=np.uint8)
-        
+        self.observation_space = spaces.Sequence(
+            spaces.Box(low=0, high=255, shape=(0,), dtype=np.uint8)        
+        )        
         self.multi_step = multi_step
 
     def step(self, action):

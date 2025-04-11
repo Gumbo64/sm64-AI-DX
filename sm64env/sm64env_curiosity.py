@@ -151,27 +151,19 @@ class SM64_ENV_CURIOSITY(gym.Env):
         if len(self.my_pos) == 0:
             return 0
 
-        # distances_inverse = 1 / (self.distances**2 + 1e-8)
-        # self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits) * distances_inverse
-        self.curiosity_reward = np.exp(- 4 * self.visits / self.max_visits)
-        self.curiosity_reward = np.clip(np.mean(self.curiosity_reward), 0, 1)
+        # self.curiosity_reward = 1 - np.mean(self.visits / self.max_visits)
+        # self.curiosity_reward = np.exp(- 4 * np.mean(self.visits / self.max_visits))
 
-        # my_visits = self.avg_visits
-        # my_visits = self.curiosity.get_visits(self.my_pos)
-        # my_visits = self.curiosity.get_sphere_visits(self.my_pos)
-        
-        # curiosity_reward = (1 - my_visits / self.max_visits)
+        self.curiosity_reward = np.mean(np.exp(- 4 * self.visits / self.max_visits))
 
+        self.curiosity_reward = np.clip(self.curiosity_reward, 0, 1)
 
-        
-        # self.curiosity_reward = np.clip(math.exp(-4 * my_visits / self.max_visits), 0, 1)
-        # self.curiosity_reward = np.clip(math.exp(- 10 * self.visits_reward), 0, 1)
 
         self.vel_reward = np.clip(math.sqrt(self.my_vel[0] ** 2 + self.my_vel[2] ** 2) / 50, 0, 1)
         # self.vel_reward = np.clip(np.linalg.norm(self.my_vel) / 50, 0, 1)
         
-        reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
-        # reward = 0.5 * self.curiosity_reward + 0.5 * self.vel_reward
+        # reward = 0.9 * self.curiosity_reward + 0.1 * self.vel_reward
+        reward = 0.5 * self.curiosity_reward + 0.5 * self.vel_reward
         # reward = 0.75 * curiosity_reward + 0.25 * vel_reward
         return reward 
 

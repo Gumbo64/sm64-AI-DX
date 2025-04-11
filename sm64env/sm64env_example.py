@@ -109,6 +109,12 @@ class SM64_ENV(gym.Env):
         return self.get_observation(), {}
 
 
+    def get_info(self):
+        state = self.game.get_mario_state(0)
+        return {
+            "pos": np.array(state.pos),
+            "vel": np.array(state.vel),
+        }
 
 
 
