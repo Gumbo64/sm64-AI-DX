@@ -7,8 +7,9 @@ import random
 import gym
 import time
 import pygame
+import math
 n_envs = 1
-multi_step = 1
+multi_step = 4
 print_time = 1000
 
 clear_sm64_exes()
@@ -68,6 +69,7 @@ while True:
 
     # print(actions)
     obs, reward, done, truncated, info = env.step(action)
+    print(info['angle'] / math.pi * 180)
     # print(time.time() - start_time)
 
     # if i % print_time == 0:

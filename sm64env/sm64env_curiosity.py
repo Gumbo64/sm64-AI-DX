@@ -60,8 +60,9 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX = length * np.cos(newAngle)
         stickY = length * np.sin(newAngle)
 
-        self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        self.game.step_game(num_steps=self.multi_step)
+
+        self.game.step_game(num_steps=self.multi_step, stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+
         
         obs = self.get_observation()
         reward = self.calculate_reward(obs)
@@ -72,10 +73,22 @@ class SM64_ENV_CURIOSITY(gym.Env):
             "vel_reward": self.vel_reward,
             "avg_visits": self.avg_visits
         }
-
+        info = {**info, **self.get_info()}
 
         return obs, reward, done, truncated, info
     
+    def get_info(self):
+        state = self.game.get_mario_state(0)
+
+        camera_pos = self.game.get_lakitu_pos()
+        dir = state.pos - camera_pos
+        angle = math.atan2(dir[2], dir[0])
+
+        return {
+            "pos": np.array(state.pos),
+            "vel": np.array(state.vel),
+            "angle": angle,
+        }
     
     def get_observation(self):
         # PLAYER TOKEN
@@ -169,8 +182,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
     def reset(self):
         self.avg_visits = 0
-        self.game.set_controller(buttonL=1)
-        self.game.step_game()
+        self.game.step_game(buttonL=1)
         if self.soft_reset:
             self.curiosity.soft_reset()
         else:

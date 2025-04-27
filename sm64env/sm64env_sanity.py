@@ -57,8 +57,8 @@ class SM64_ENV_SANITY(gym.Env):
         # print(stickX, stickY)
 
 
-        self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        self.game.step_game(num_steps=self.multi_step)
+        self.game.step_game(num_steps=self.multi_step, stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+
         
         obs = self.get_observation()
         reward = self.calculate_reward(obs)
@@ -148,8 +148,7 @@ class SM64_ENV_SANITY(gym.Env):
         return pos_reward
 
     def reset(self):
-        self.game.set_controller(buttonL=1)
-        self.game.step_game()
+        self.game.step_game(buttonL=1)
         return self.get_observation(), {}
     
 

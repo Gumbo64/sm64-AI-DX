@@ -51,6 +51,5 @@ with tqdm.tqdm() as pbar:
             buttonA = (random.random() <= 1/5) if diff[1] < -220 else (random.random() <= 1/50)
             # buttonA = (random.random() <= 1/5) if diff[1] < -220 else 0
 
-            game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA)
-            game.step_game()         
+            game.step_game(stickX=stickX, stickY=stickY, buttonA=buttonA)      
         # pbar.update(1)

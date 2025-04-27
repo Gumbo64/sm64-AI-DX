@@ -482,8 +482,19 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void step_game(int steps) {
+void step_game(int steps,
+    int playerIndex, int stickX, int stickY, 
+    int buttonA, int buttonB, int buttonX, int buttonY,
+    int buttonL, int buttonR, int buttonZ, int buttonStart,
+    int buttonDU, int buttonDL, int buttonDR, int buttonDD,
+    int buttonCU, int buttonCL, int buttonCR, int buttonCD) {
     for (int i = 0; i < steps; i++) {
+        set_controller(playerIndex, stickX, stickY, 
+            buttonA, buttonB, buttonX, buttonY,
+            buttonL, buttonR, buttonZ, buttonStart,
+            buttonDU, buttonDL, buttonDR, buttonDD,
+            buttonCU, buttonCL, buttonCR, buttonCD
+        );
         debug_context_reset();
         CTX_BEGIN(CTX_FRAME);
         WAPI.main_loop(produce_one_frame);

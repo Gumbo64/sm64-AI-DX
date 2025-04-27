@@ -51,7 +51,7 @@ def generate_discrete_path(length):
     path[:, 0:2] = clamp_stick(path[:, 0:2])
     return path
 
-class SM64_WORKER(multiprocessing.Process):
+class AstarishWorker(multiprocessing.Process):
     def __init__(self, name, task_queue, result_queue, multi_step=1, server_port=7777):
         multiprocessing.Process.__init__(self)
         self.name = name
@@ -79,8 +79,6 @@ class SM64_WORKER(multiprocessing.Process):
     def execute_path(self, path, rollout_length):
         score = 0
 
-        # c = CURIOSITY(max_visits=2048)
-        # rollout_path = generate_path(rollout_length)
         rollout_path = generate_discrete_path(rollout_length)
         if len(path)==0:
             total_path = rollout_path
@@ -111,65 +109,3 @@ class SM64_WORKER(multiprocessing.Process):
     def stop(self):
         self._stop_event.set()
         
-
-if __name__ == "__main__":
-    from tqdm import tqdm
-
-    
-
-
-    multiprocessing.set_start_method('spawn', force=True)
-    num_workers = 8
-    n_tasks = 256
-    length = 800
-    rollout_length = 100
-
-    task_queue = multiprocessing.Queue()
-    result_queue = multiprocessing.Queue()
-    workers = []
-    
-    for i in range(num_workers):
-        worker = SM64_WORKER(
-            name=f"Worker{i+1}", 
-            server_port=7777 + i, 
-            task_queue=task_queue, 
-            result_queue=result_queue
-        )
-        workers.append(worker)
-        worker.start()
-    
-    start_time = time.time()
-    
-    try:
-        # Generate and assign paths to workers
-        for i in range(n_tasks):
-            example_path = generate_path(length)
-            task = (example_path, rollout_length)
-            task_queue.put(task)
-        
-
-        
-        results = []
-        i = 0
-        with tqdm(total=n_tasks) as pbar:
-            while not task_queue.qsize() == 0:
-                if not result_queue.empty():
-                    path, rollout_positions = result_queue.get()
-                    pbar.update(1)
-                    # print(f"{len(results)} Path execution result: {result}")
-                # time.sleep(0.1)
-    
-    except KeyboardInterrupt:
-        for worker in workers:
-            worker.stop()
-            worker.join()
-    
-    # Stop the workers gracefully
-    for worker in workers:
-        task_queue.put(None)
-    
-    for worker in workers:
-        worker.join()
-    
-    end_time = time.time()
-    print(f"Total execution time: {end_time - start_time} seconds")

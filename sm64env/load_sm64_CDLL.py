@@ -32,13 +32,8 @@ class SM64_GAME:
         self.sm64_CDLL.main.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_char_p)]
         self.sm64_CDLL.main.restype = None
 
-        self.sm64_CDLL.step_game.argtypes = [ctypes.c_int]
+        self.sm64_CDLL.step_game.argtypes = [ctypes.c_int for _ in range(20)]
         self.sm64_CDLL.step_game.restype = None
-        
-        self.sm64_CDLL.set_controller.argtypes = [
-            ctypes.c_int for _ in range(19)
-        ]
-        self.sm64_CDLL.set_controller.restype = None
         
         self.sm64_CDLL.get_mario_state.argtypes = [ctypes.c_int]
         self.sm64_CDLL.get_mario_state.restype = ctypes.POINTER(MarioState)
@@ -77,8 +72,7 @@ class SM64_GAME:
         self.ctypes_commands[:] = [commands.encode('utf-8') for commands in self.commands]
         self.sm64_CDLL.main(len(self.commands), self.ctypes_commands)
 
-        self.set_controller(buttonL=1)
-        self.step_game()
+        self.step_game(buttonL=1)
 
     def __del__(self):
         # Unload the shared library, deinitialise the game, delete the temporary executable
@@ -97,33 +91,26 @@ class SM64_GAME:
         except:
             pass
 
-    def step_game(self, num_steps=1):
-        return self.sm64_CDLL.step_game(num_steps)
-
-    def set_controller(self,
+    def step_game(self, num_steps=1, 
         playerIndex = 0, stickX = 0, stickY = 0,
         buttonA = 0, buttonB = 0, buttonX = 0, buttonY = 0,
         buttonL = 0, buttonR = 0, buttonZ = 0, buttonStart = 0,
         buttonDU = 0, buttonDL = 0, buttonDR = 0, buttonDD = 0,
-        buttonCU = 0, buttonCL = 0, buttonCR = 0, buttonCD = 0
-    ):
-        stickX = int(stickX)
-        stickY = int(stickY)
-        assert -80 <= stickX <= 80
-        assert -80 <= stickY <= 80
+        buttonCU = 0, buttonCL = 0, buttonCR = 0, buttonCD = 0):
 
+        num_steps, playerIndex, stickX, stickY, buttonA, buttonB, buttonX, buttonY, \
+        buttonL, buttonR, buttonZ, buttonStart, buttonDU, buttonDL, buttonDR, buttonDD, \
+        buttonCU, buttonCL, buttonCR, buttonCD = map(int, (
+            num_steps, playerIndex, stickX, stickY, buttonA, buttonB, buttonX, buttonY,
+            buttonL, buttonR, buttonZ, buttonStart, buttonDU, buttonDL, buttonDR, buttonDD,
+            buttonCU, buttonCL, buttonCR, buttonCD))
 
-        buttons = [buttonA, buttonB, buttonX, buttonY, buttonL, buttonR, buttonZ, buttonStart,
-                   buttonDU, buttonDL, buttonDR, buttonDD, buttonCU, buttonCL, buttonCR, buttonCD]
-        assert all(0 <= button <= 1 for button in buttons)
-    
-        self.sm64_CDLL.set_controller(
+        return self.sm64_CDLL.step_game(num_steps,
             playerIndex, stickX, stickY,
             buttonA, buttonB, buttonX, buttonY,
             buttonL, buttonR, buttonZ, buttonStart,
             buttonDU, buttonDL, buttonDR, buttonDD,
-            buttonCU, buttonCL, buttonCR, buttonCD            
-        )
+            buttonCU, buttonCL, buttonCR, buttonCD)
 
     def get_mario_state(self, playerIndex):
         player_mario_state = self.sm64_CDLL.get_mario_state(playerIndex)

@@ -47,8 +47,8 @@ class SM64_ENV_PIXELS(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = buttons
 
-        self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        self.game.step_game(num_steps=self.multi_step)
+        self.game.step_game(num_steps=self.multi_step, stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+
         
         obs = self.get_observation()
         reward = self.calculate_reward(obs)
@@ -79,8 +79,7 @@ class SM64_ENV_PIXELS(gym.Env):
         self.game_name = str(uuid.uuid4()).replace("-", "").replace(" ", "")
         os.makedirs(f"./data/{self.game_name}", exist_ok=True)
         
-        self.game.set_controller(buttonL=1)
-        self.game.step_game()
+        self.game.step_game(buttonL=1)
 
         obs, _, _, _, info = self.step((np.array([0,0]), np.array([0,0,0])))
 

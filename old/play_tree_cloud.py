@@ -64,8 +64,7 @@ with tqdm.tqdm() as pbar:
             stickY = math.sin(angle) * 80
             buttonA = (random.random() <= 1/5) if diff[1] < -220 else (random.random() <= 1/50)
 
-            game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA)
-            game.step_game()
+            game.step_game(stickX=stickX, stickY=stickY, buttonA=buttonA)
 
             new_pts, new_normals = game.get_raycast_sphere_with_normal(amount=POINTS_PER_FRAME, maxRayLength=MAX_RAY_LENGTH)
             zero_normals = np.all(new_normals == 0, axis=1)

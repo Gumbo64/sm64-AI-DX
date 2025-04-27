@@ -24,8 +24,7 @@ with tqdm.tqdm() as pbar:
         buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.9, 0.1], k=3)
         # buttonL = random.choices([0, 1], weights=[0.01, 0.99], k=1)[0]
 
-        game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        game.step_game()
+        game.step_game(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
         # marioState = game.get_mario_state(0)
         # networkPlayer = game.get_network_player(0)
         marioStates = [game.get_mario_state(i) for i in range(2)]

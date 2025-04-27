@@ -16,9 +16,8 @@ with tqdm.tqdm() as pbar:
             stickX = random.randint(-80, 80)
             stickY = random.randint(-80, 80)
             buttonA, buttonB, buttonZ = random.choices([0, 1], weights=[0.99, 0.01], k=3)
-            game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-            # game.set_controller(stickX=stickX, stickY=stickY)
-            game.step_game()
+
+            game.step_game(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
             # marioState = game.get_mario_state(0)
             # networkPlayer = game.get_network_player(0)
             # print(networkPlayer.currCourseNum)

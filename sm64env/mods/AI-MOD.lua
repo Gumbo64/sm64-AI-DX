@@ -72,12 +72,11 @@ end
 function set_camera(m)
     vec3f_set(gLakituState.focus, m.pos.x, m.pos.y, m.pos.z)
 
-    local faceAngle = last_angle
+
     if m.vel.z * m.vel.z + m.vel.x * m.vel.x > 100 then
-        faceAngle = atan2s(m.vel.z, m.vel.x)
-        last_angle = faceAngle
+        last_angle  = atan2s(m.vel.z, m.vel.x)
     end
-    vec3f_set_dist_and_angle(m.pos, gLakituState.pos, 500, 0, faceAngle + 0x8000)
+    vec3f_set_dist_and_angle(m.pos, gLakituState.pos, 500, 0, last_angle + 0x8000)
     gLakituState.pos.y = gLakituState.pos.y + 300
 end
 

@@ -31,8 +31,8 @@ class SM64_ENV_PIXELS(gym.Env):
         stickX, stickY = stick
         buttonA, buttonB, buttonZ = buttons
 
-        self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        self.game.step_game(num_steps=self.multi_step)
+        self.game.step_game(num_steps=self.multi_step, stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+
         
         obs = self.get_observation()
         reward = self.calculate_reward(obs)
@@ -63,10 +63,9 @@ class SM64_ENV_PIXELS(gym.Env):
         return 0 # TODO: Implement reward function
     
     def reset(self):
-        self.game.set_controller(buttonL=1)
-        self.game.step_game()
-        self.game.set_controller(buttonL=0)
-        self.game.step_game(num_steps=20) # takes 20 frames to warp out and in the level
+        self.game.step_game(buttonL=1)
+        self.game.step_game(buttonL=0, num_steps=20) # takes 20 frames to warp out and in the level
+
         return self.get_observation(), self.get_info()
 
 

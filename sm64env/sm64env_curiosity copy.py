@@ -60,8 +60,8 @@ class SM64_ENV_CURIOSITY(gym.Env):
         stickX = length * np.cos(newAngle)
         stickY = length * np.sin(newAngle)
 
-        self.game.set_controller(stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
-        self.game.step_game(num_steps=self.multi_step)
+        self.game.step_game(num_steps=self.multi_step, stickX=stickX, stickY=stickY, buttonA=buttonA, buttonB=buttonB, buttonZ=buttonZ)
+
         
         obs = self.get_observation()
         reward = self.calculate_reward(obs)
@@ -177,8 +177,7 @@ class SM64_ENV_CURIOSITY(gym.Env):
 
     def reset(self):
         self.avg_visits = 0
-        self.game.set_controller(buttonL=1)
-        self.game.step_game()
+        self.game.step_game(buttonL=1)
         if self.soft_reset:
             self.curiosity.soft_reset()
         else:

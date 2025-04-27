@@ -90,7 +90,8 @@ if __name__ == "__main__":
                             new_path = np.append(path, ext_path, axis=0)
                             
                             task_queue.put((new_path, 0))
-
+                    if task_queue.qsize() == 0 and result_queue.qsize() == 0:
+                        break
                     iterbar.set_postfix(queue_size=task_queue.qsize()) 
                     iterbar.update(1)
 
