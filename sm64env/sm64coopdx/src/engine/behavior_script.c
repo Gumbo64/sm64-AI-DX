@@ -45,23 +45,28 @@ static void goto_behavior_unused(const BehaviorScript *bhvAddr) {
     gCurrentObject->bhvStackIndex = 0;
 }
 
+
+void random_seed_set(u16 seed) {
+    gRandomSeed16 = seed;
+}
+
 // Generate a pseudorandom integer from 0 to 65535 from the random seed, and update the seed.
 u16 random_u16(void) {
-    u16 savedSeed = gRandomSeed16;
-    struct SyncObject* so = NULL;
+    // u16 savedSeed = gRandomSeed16;
+    // struct SyncObject* so = NULL;
 
-    if (gOverrideRngPosition != NULL) {
-        // override this function for rng positions
-        gRandomSeed16 = gOverrideRngPosition->seed;
-    } else if (gCurrentObject && gCurrentObject->oSyncID != 0) {
-        // override this function for synchronized entities
-        so = sync_object_get(gCurrentObject->oSyncID);
-        if (so != NULL && so->o == gCurrentObject) {
-            gRandomSeed16 = so->randomSeed;
-        } else {
-            so = NULL;
-        }
-    }
+    // if (gOverrideRngPosition != NULL) {
+    //     // override this function for rng positions
+    //     gRandomSeed16 = gOverrideRngPosition->seed;
+    // } else if (gCurrentObject && gCurrentObject->oSyncID != 0) {
+    //     // override this function for synchronized entities
+    //     so = sync_object_get(gCurrentObject->oSyncID);
+    //     if (so != NULL && so->o == gCurrentObject) {
+    //         gRandomSeed16 = so->randomSeed;
+    //     } else {
+    //         so = NULL;
+    //     }
+    // }
 
     u16 temp1, temp2;
 
@@ -88,15 +93,15 @@ u16 random_u16(void) {
     }
 
     // restore seed
-    if (gOverrideRngPosition != NULL) {
-        gOverrideRngPosition->seed = gRandomSeed16;
-        gRandomSeed16 = savedSeed;
-        return gOverrideRngPosition->seed;
-    } else if (so != NULL) {
-        so->randomSeed = gRandomSeed16;
-        gRandomSeed16 = savedSeed;
-        return so->randomSeed;
-    }
+    // if (gOverrideRngPosition != NULL) {
+    //     gOverrideRngPosition->seed = gRandomSeed16;
+    //     gRandomSeed16 = savedSeed;
+    //     return gOverrideRngPosition->seed;
+    // } else if (so != NULL) {
+    //     so->randomSeed = gRandomSeed16;
+    //     gRandomSeed16 = savedSeed;
+    //     return so->randomSeed;
+    // }
 
     return gRandomSeed16;
 }

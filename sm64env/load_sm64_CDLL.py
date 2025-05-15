@@ -72,7 +72,9 @@ class SM64_GAME:
         self.ctypes_commands[:] = [commands.encode('utf-8') for commands in self.commands]
         self.sm64_CDLL.main(len(self.commands), self.ctypes_commands)
 
+        self.step_game(buttonL=0, num_steps=20) # Wait for the game to load
         self.step_game(buttonL=1)
+        self.step_game(buttonL=0, num_steps=20) # takes 20 frames to warp out and in the level
 
     def __del__(self):
         # Unload the shared library, deinitialise the game, delete the temporary executable
@@ -96,8 +98,9 @@ class SM64_GAME:
         buttonA = 0, buttonB = 0, buttonX = 0, buttonY = 0,
         buttonL = 0, buttonR = 0, buttonZ = 0, buttonStart = 0,
         buttonDU = 0, buttonDL = 0, buttonDR = 0, buttonDD = 0,
-        buttonCU = 0, buttonCL = 0, buttonCR = 0, buttonCD = 0):
+        buttonCU = 0, buttonCL = 0, buttonCR = 0, buttonCD = 0) -> None:
 
+        # Convert all inputs to integers
         num_steps, playerIndex, stickX, stickY, buttonA, buttonB, buttonX, buttonY, \
         buttonL, buttonR, buttonZ, buttonStart, buttonDU, buttonDL, buttonDR, buttonDD, \
         buttonCU, buttonCL, buttonCR, buttonCD = map(int, (
@@ -105,24 +108,24 @@ class SM64_GAME:
             buttonL, buttonR, buttonZ, buttonStart, buttonDU, buttonDL, buttonDR, buttonDD,
             buttonCU, buttonCL, buttonCR, buttonCD))
 
-        return self.sm64_CDLL.step_game(num_steps,
+        self.sm64_CDLL.step_game(num_steps,
             playerIndex, stickX, stickY,
             buttonA, buttonB, buttonX, buttonY,
             buttonL, buttonR, buttonZ, buttonStart,
             buttonDU, buttonDL, buttonDR, buttonDD,
             buttonCU, buttonCL, buttonCR, buttonCD)
 
-    def get_mario_state(self, playerIndex):
+    def get_mario_state(self, playerIndex) -> MarioState:
         player_mario_state = self.sm64_CDLL.get_mario_state(playerIndex)
         player_mario_state = player_mario_state.contents
         return player_mario_state
     
-    def get_network_player(self, playerIndex):
+    def get_network_player(self, playerIndex) -> NetworkPlayer:
         network_player = self.sm64_CDLL.get_network_player(playerIndex)
         network_player = network_player.contents
         return network_player
 
-    def get_raycast_with_normal(self, pos, dir):
+    def get_raycast_with_normal(self, pos, dir) -> tuple[np.ndarray, np.ndarray]:
         ctypes_pos = (Vec3f)(*pos)
         ctypes_dir = (Vec3f)(*dir)
         ctypes_hitpos = (Vec3f)()
@@ -130,13 +133,13 @@ class SM64_GAME:
         self.sm64_CDLL.raycast_with_normal(ctypes_hitpos, ctypes_normal, ctypes_pos, ctypes_dir)
         return np.array(ctypes_hitpos), np.array(ctypes_normal)
 
-    def get_raycast_sphere_with_normal(self, amount=3000, maxRayLength=28000, cameraDirBiasFactor=0):
+    def get_raycast_sphere_with_normal(self, amount=3000, maxRayLength=28000, cameraDirBiasFactor=0) -> tuple[np.ndarray, np.ndarray]:
         ctypes_hitpos_arr = (Vec3f * amount)()
         ctypes_normal_arr = (Vec3f * amount)()
         self.sm64_CDLL.raycast_sphere_with_normal(ctypes_hitpos_arr, ctypes_normal_arr, amount, maxRayLength, cameraDirBiasFactor)
         return np.array(ctypes_hitpos_arr), np.array(ctypes_normal_arr)
 
-    def get_pixels(self):
+    def get_pixels(self) -> np.ndarray:
         ctypes_pixels = self.sm64_CDLL.get_pixels().contents
 
         w = ctypes_pixels.pixelsWidth
@@ -155,7 +158,7 @@ class SM64_GAME:
         img = np.flipud(img).astype(np.uint8)
         return img
     
-    def get_pixels_grayscale(self):
+    def get_pixels_grayscale(self) -> np.ndarray:
         ctypes_pixels = self.sm64_CDLL.get_pixels_grayscale().contents
         w = ctypes_pixels.pixelsWidth
         h = ctypes_pixels.pixelsHeight
@@ -165,10 +168,10 @@ class SM64_GAME:
  
         return img
 
-    def get_lakitu_pos(self):
+    def get_lakitu_pos(self) -> np.ndarray:
         return np.array(self.sm64_CDLL.get_lakitu_pos().contents)
     
-    def get_lakitu_yaw(self):
+    def get_lakitu_yaw(self) -> float:
         return self.sm64_CDLL.get_lakitu_yaw()
     
 

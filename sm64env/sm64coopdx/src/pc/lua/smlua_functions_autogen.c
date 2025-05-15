@@ -9733,6 +9733,20 @@ int smlua_func_random_u16(UNUSED lua_State* L) {
     return 1;
 }
 
+int smlua_func_random_seed_set(UNUSED lua_State* L) {
+    if (L == NULL) { return 0; }
+
+    int top = lua_gettop(L);
+    if (top != 1) {
+        LOG_LUA_LINE("Improper param count for '%s': Expected %u, Received %u", "random_u32", 1, top);
+        return 0;
+    }
+
+    random_seed_set(smlua_to_integer(L, 1));
+
+    return 1;
+}
+
   //////////////////////
  // behavior_table.h //
 //////////////////////
@@ -33631,6 +33645,7 @@ void smlua_bind_functions_autogen(void) {
     smlua_bind_function(L, "random_float", smlua_func_random_float);
     smlua_bind_function(L, "random_sign", smlua_func_random_sign);
     smlua_bind_function(L, "random_u16", smlua_func_random_u16);
+    smlua_bind_function(L, "random_seed_set", smlua_func_random_seed_set);
 
     // behavior_table.h
     smlua_bind_function(L, "get_behavior_from_id", smlua_func_get_behavior_from_id);

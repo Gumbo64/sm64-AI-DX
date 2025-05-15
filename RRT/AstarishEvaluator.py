@@ -1,79 +1,73 @@
 import numpy as np
 import multiprocessing
 # from AstarishWorker import AstarishWorker
+import time
 from .PointPath import PointPath
 from sm64env.sm64env_nothing import SM64_ENV_NOTHING
 multiprocessing.set_start_method('spawn', force=True)
-import time
-import math
+
 class AstarishEvaluator:
-    def __init__(self):
-        # self.num_workers = 8
-        # self.starting_length = 100
-
-        # self.seg_length = 10
-        # self.starting_paths = 256
-        # self.add_amount = 100
-
-        # self.epsilon = 400
-        # self.max_queue = 10000
-        # self.discrete_mode = False
-
-        # self.task_queue = multiprocessing.Queue()
-        # self.result_queue = multiprocessing.Queue()
-        # self.workers = []
-
-        # for i in range(self.num_workers):
-        #     worker = AstarishWorker(
-        #         name=f"Worker{i+1}", 
-        #         task_queue=self.task_queue, 
-        #         result_queue=self.result_queue,
-                
-        #         multi_step=4,
-        #         server_port=7777 + i,
-
-        #     )
-        #     self.workers.append(worker)
-        #     worker.start()
+    def __init__(self, goal_radius=300):
         self.game = SM64_ENV_NOTHING(multi_step=4, server=True, server_port=7777)
-        self.max_length = 200
+        self.goal_radius = goal_radius
+        self.goal_timeout = 40
 
-    def evaluate(self, points) -> bool:
+    def start_pos(self):
+        _, info = self.game.reset()
+        self.reset_policy()
+
+        position = info['pos']
+        return position
+    # Decides what action to take deterministically
+    def policy(self, info, goalPoint):
+        position = info['pos']
+        globalAngle = info['angle']
+
+        diff = goalPoint - position
+        angleToGoal = np.arctan2(diff[2], diff[0])
+        
+        angle = angleToGoal - globalAngle
+        stickX = np.sin(angle) * 80
+        stickY = np.cos(angle) * 80
+        buttonA = not self.pressed_last
+        if goalPoint[1] > (position[1]):
+            buttonA = 0 if self.pressed_last else 1
+            self.pressed_last = not self.pressed_last
+
+        return [(stickX, stickY), (buttonA, 0, 0)]
+
+    def reset_policy(self):
+        self.pressed_last = False
+
+    def evaluate(self, points, delay=0) -> tuple[bool, np.ndarray]:
         pointPath = PointPath(points)
 
         done = False
         _, info = self.game.reset()
-        position = info['pos']
-        velocity = info['vel']
-        globalAngle = info['angle']
+        
+        self.reset_policy()
 
-        for i in range(self.max_length):
+        position = info['pos']
+        lastGoalTime = 0
+
+        while True:
             goalPoint = pointPath.get_goalpoint()
             
-            diff = goalPoint - position
-            angleToGoal = np.arctan2(diff[2], diff[0])
-            
-            angle = angleToGoal + globalAngle
-            # angle = 0
-            print(angle / math.pi * 180)
-            stickX = np.cos(angle) * 80
-            stickY = np.sin(angle) * 80
-            buttonA = 1 if goalPoint[1] > (position[1] + 10) else 0
-            # buttonA = 0
-
-            action = [(stickX, stickY), (buttonA, 0, 0)]
-            print(action)
-            obs, reward, done, truncated, info = self.game.step(action)
-            time.sleep(0.0166 * 4)
+            action = self.policy(info, goalPoint)
+            _, _, _, _, info = self.game.step(action)
+            time.sleep(delay)
             
             position = info['pos']
-            velocity = info['vel']
-            globalAngle = info['angle']
-            reward, done = pointPath.update_goal(position)
-            print(position)
+            _, newGoal, done = pointPath.update_goal(position)
+            if newGoal:
+                lastGoalTime = 0
+            else:
+                lastGoalTime += 1
+                if lastGoalTime > self.goal_timeout:
+                    return False, pointPath.get_times()
+
             if done:
-                break
-        return done
+                return True, pointPath.get_times()
 
         
 
