@@ -69,5 +69,6 @@ void end_master_display_list(void);
 void rendering_init(void);
 void config_gfx_pool(void);
 void display_and_vsync(void);
+void adjust_analog_stick(struct Controller *controller);
 
 #endif // GAME_INIT_H

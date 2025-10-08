@@ -12,20 +12,20 @@ combinations = [
     {
         "filename": "root_node_throughgate.npy",
         "goals": [
-            # np.array([-8000, 900, 0])
+            np.array([-8000, 900, 0])
         ]
     },
     {
         "filename": "root_node_walljumpandelevator.npy",
         "goals": [
             np.array([-8000, 900, 0]),
-            # np.array([8000, 900, 0]),
+            np.array([8000, 900, 0]),
         ]
     },
     {
         "filename": "root_node_RRTStar copy.npy",
         "goals": [
-            # np.array([8000, 900, 8000]),
+            np.array([8000, 900, 8000]),
             # np.array([8000, 900, -8000]),
         ]
     }

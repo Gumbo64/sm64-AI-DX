@@ -24,6 +24,13 @@
         "bitset": "c",
         "initializer_list": "c",
         "regex": "c",
-        "valarray": "c"
+        "valarray": "c",
+        "gfx_sdl.h": "c",
+        "gfx_opengl.h": "c",
+        "gfx_dummy.h": "c",
+        "gfx_direct3d11.h": "c",
+        "rom_checker.h": "c",
+        "sdl_opengles2.h": "c",
+        "header.h": "c"
     }
 }

@@ -54,6 +54,7 @@
 
 #include "gfx_dimensions.h"
 #include "game/segment2.h"
+#include "engine/math_util.h"
 
 #ifdef DISCORD_SDK
 #include "pc/discord/discord.h"
@@ -481,6 +482,12 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+void set_controller(int playerIndex, int stickX, int stickY, 
+    int buttonA, int buttonB, int buttonX, int buttonY,
+    int buttonL, int buttonR, int buttonZ, int buttonStart,
+    int buttonDU, int buttonDL, int buttonDR, int buttonDD,
+    int buttonCU, int buttonCL, int buttonCR, int buttonCD
+);
 
 void step_game(int steps,
     int playerIndex, int stickX, int stickY, 

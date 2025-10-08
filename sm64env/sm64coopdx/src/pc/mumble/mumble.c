@@ -12,6 +12,7 @@
 #include "pc/djui/djui.h"
 
 #include <stdbool.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 	#include <windows.h>
